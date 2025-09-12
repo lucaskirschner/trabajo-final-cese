@@ -1,0 +1,6 @@
+# Altium
+hardware/altium/**/Project Outputs/*
+hardware/altium/**/__Previews/*
+hardware/altium/**/History/*
+hardware/altium/**/Project Logs for */
+*.PrjPcbStructure
