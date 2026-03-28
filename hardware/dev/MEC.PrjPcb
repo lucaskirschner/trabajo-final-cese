@@ -33,7 +33,7 @@ FSMCodingStyle=eFMSDropDownList_OneProcess
 FSMEncodingStyle=eFMSDropDownList_OneHot
 IsProjectConflictPreventionWarningsEnabled=0
 IsVirtualBomDocumentRemoved=1
-OutputPath=
+OutputPath=Project Outputs for MEC
 LogFolderPath=
 ManagedProjectGUID=
 IncludeDesignInRelease=0
@@ -43,7 +43,7 @@ CrossRefPorts=3
 CrossRefCrossSheets=1
 CrossRefSheetEntries=0
 CrossRefFollowFromMainSettings=1
-CurrentVariant=PCBWAY
+CurrentVariant=JLCPCB
 
 [Preferences]
 PrefsVaultGUID=
@@ -300,7 +300,7 @@ UniqueID=EA3BE524-3C37-4FF3-B0A6-4ED7662D72D4
 Description=JLCPCB
 AllowFabrication=0
 ParameterCount=0
-VariationCount=14
+VariationCount=17
 Variation1=Designator=U8|UniqueId=\ANLHPOTA\NKHBKYPP\AGYQCLFA|Kind=1|AlternatePart= 
 Variation2=Designator=J1|UniqueId=\ANLHPOTA\VHJJYFVZ\PZHPOFJB|Kind=1|AlternatePart= 
 Variation3=Designator=J2|UniqueId=\ANLHPOTA\VHJJYFVZ\BCCRTBMT|Kind=1|AlternatePart= 
@@ -315,6 +315,9 @@ Variation11=Designator=U2|UniqueId=\ANLHPOTA\RMDEFDTS\LWNVHLDH|Kind=1|AlternateP
 Variation12=Designator=J21|UniqueId=\ANLHPOTA\YFSEBHBB\EHQYVONU|Kind=1|AlternatePart= 
 Variation13=Designator=U11|UniqueId=\ANLHPOTA\RMLHGFGC\LARLDZQY|Kind=1|AlternatePart= 
 Variation14=Designator=J25|UniqueId=\ANLHPOTA\RTSPRHQG\IDYGNVEP|Kind=1|AlternatePart= 
+Variation15=Designator=TP4|UniqueId=\ANLHPOTA\NKHBKYPP\SGLCKSLC|Kind=1|AlternatePart= 
+Variation16=Designator=TP5|UniqueId=\ANLHPOTA\NKHBKYPP\UVMVBSHX|Kind=1|AlternatePart= 
+Variation17=Designator=TP6|UniqueId=\ANLHPOTA\NKHBKYPP\EMHWGYCZ|Kind=1|AlternatePart= 
 ParamVariationCount=0
 
 [ProjectVariant3]
@@ -322,7 +325,7 @@ UniqueID=2DD2CE12-5996-46D4-8CAD-455254856041
 Description=PCBWAY
 AllowFabrication=0
 ParameterCount=0
-VariationCount=11
+VariationCount=14
 Variation1=Designator=J25|UniqueId=\ANLHPOTA\RTSPRHQG\IDYGNVEP|Kind=1|AlternatePart= 
 Variation2=Designator=J21|UniqueId=\ANLHPOTA\YFSEBHBB\EHQYVONU|Kind=1|AlternatePart= 
 Variation3=Designator=J1|UniqueId=\ANLHPOTA\VHJJYFVZ\PZHPOFJB|Kind=1|AlternatePart= 
@@ -334,6 +337,9 @@ Variation8=Designator=J7|UniqueId=\ANLHPOTA\VHJJYFVZ\UFMXPFQU|Kind=1|AlternatePa
 Variation9=Designator=J8|UniqueId=\ANLHPOTA\VHJJYFVZ\DFYVRHBM|Kind=1|AlternatePart= 
 Variation10=Designator=J5|UniqueId=\ANLHPOTA\VHJJYFVZ\ZVXFXCUX|Kind=1|AlternatePart= 
 Variation11=Designator=U11|UniqueId=\ANLHPOTA\RMLHGFGC\LARLDZQY|Kind=1|AlternatePart= 
+Variation12=Designator=TP4|UniqueId=\ANLHPOTA\NKHBKYPP\SGLCKSLC|Kind=1|AlternatePart= 
+Variation13=Designator=TP5|UniqueId=\ANLHPOTA\NKHBKYPP\UVMVBSHX|Kind=1|AlternatePart= 
+Variation14=Designator=TP6|UniqueId=\ANLHPOTA\NKHBKYPP\EMHWGYCZ|Kind=1|AlternatePart= 
 ParamVariationCount=0
 
 [Parameter1]
@@ -397,7 +403,7 @@ SCH_HasExpandLogicalToPhysicalSheets=-1
 SaveSettingsToOutJob=0
 
 [Generic_EDE]
-OutputDir=
+OutputDir=Project Outputs for MEC
 
 [OutputGroup1]
 Name=Netlist Outputs
@@ -827,9 +833,9 @@ Configuration1_Item3=OpenExported=False|AddToProject=False|ReportBOMViolationsIn
 Configuration1_Name4=GroupOrder
 Configuration1_Item4=
 Configuration1_Name5=VisibleOrder
-Configuration1_Item5=Quantity=67|Designator=152|PCBWAY Part #=150|PCBWAY Manufacturer=150|Description=427
+Configuration1_Item5=Designator=120|JLCPCB Basic Part #=151|Description=406
 Configuration1_Name6=VisibleOrder_Base
-Configuration1_Item6=Quantity=67|Designator=152|PCBWAY Part #=150|PCBWAY Manufacturer=150|Description=427
+Configuration1_Item6=Designator=120|JLCPCB Basic Part #=151|Description=406
 Configuration1_Name7=VisibleOrder_Consolidated
 Configuration1_Item7=Line #=100|Comment=100|Description=100|Designator=100|Quantity=100|Manufacturer 1=102|Manufacturer Part Number 1=169|Manufacturer Lifecycle 1=147|Supplier 1=75|Supplier Part Number 1=142|Supplier Unit Price 1=127|Supplier Subtotal 1=122|Quantity@All=100|Price@All=100|Quantity@JLCPCB=100|Price@JLCPCB=100|Quantity@JLCPCB Pre Order=100|Price@JLCPCB Pre Order=100
 Configuration1_Name8=VisibleOrder_Flat
