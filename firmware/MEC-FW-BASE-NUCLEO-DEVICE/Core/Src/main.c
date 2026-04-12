@@ -437,57 +437,62 @@ static void app_init(void)
     radio_cfg.short_address = 0x0002u;
     radio_cfg.role = MRF24J40_ROLE_DEVICE;
 
-    mrf24j40_init();
+    (void)mrf24j40_init();
     printf("app_init: mrf24j40 inicializado\r\n");
 
-	if(radio_cfg.role == MRF24J40_ROLE_PAN_COORDINATOR)
-	{
-		mrf24j40_configure_nonbeacon_pan_coordinator();
-	}
-	else
-	{
-		mrf24j40_configure_nonbeacon_device();
-	}
-	printf("app_init: rol mrf24j40 establecido\r\n");
+    if (radio_cfg.role == MRF24J40_ROLE_PAN_COORDINATOR)
+    {
+        (void)mrf24j40_configure_nonbeacon_pan_coordinator();
+    }
+    else
+    {
+        (void)mrf24j40_configure_nonbeacon_device();
+    }
+    printf("app_init: rol mrf24j40 establecido\r\n");
 
-	mrf24j40_set_pan_id(radio_cfg.pan_id);
-	mrf24j40_set_short_address(radio_cfg.short_address);
-	mrf24j40_set_extended_address();
+    (void)mrf24j40_set_pan_id(radio_cfg.pan_id);
+    (void)mrf24j40_set_short_address(radio_cfg.short_address);
+    (void)mrf24j40_set_extended_address();
 
-	printf("app_init: inicializacion mrf24j40 completa\r\n");
+    printf("app_init: inicializacion mrf24j40 completa\r\n");
 }
 
 static void app_task(void)
 {
-	/* Verifica interrupciones pendientes */
-	mrf24j40_update_interrupt_flags();
+    mrf24j40_status_t status;
+    bool tx_complete;
 
-	/* Si hay mensaje pendiente, lo lee y procesa */
-    if(mrf24j40_read_rx_fifo(&rx_packet) == true)
+    /* Verifica interrupciones pendientes */
+    (void)mrf24j40_update_interrupt_flags();
+
+    /* Si hay mensaje pendiente, lo lee y procesa */
+    status = mrf24j40_read_rx_fifo(&rx_packet);
+    if (status == MRF24J40_OK)
     {
-    	printf("app_task: mensaje pendiente\r\n");
-    	__NOP();	/* De momento solo se revisa mediante debug a rx_packet */
+        printf("app_task: mensaje pendiente\r\n");
+        __NOP();    /* De momento solo se revisa mediante debug a rx_packet */
     }
 
     /* Verifica si se debe transmitir un paquete */
-    if(tx_flag == 1u)
+    if (tx_flag == 1u)
     {
-    	/* Deshabilita bandera de transmision */
-    	tx_flag = 0u;
+        /* Deshabilita bandera de transmision */
+        tx_flag = 0u;
 
-    	/* Arma el paquete a transmitir */
-    	app_build_test_frame();
+        /* Arma el paquete a transmitir */
+        app_build_test_frame();
 
-    	/*Transmite paquete con ACK deshabilitado*/
-    	mrf24j40_write_tx_normal_fifo(&tx_packet, 0u);
-    	printf("app_task: intenta transmitr\r\n");
+        /* Transmite paquete con ACK deshabilitado */
+        (void)mrf24j40_write_tx_normal_fifo(&tx_packet, false);
+        printf("app_task: intenta transmitr\r\n");
     }
 
-	/* Espera confirmación de transmision */
-	if(mrf24j40_get_tx_complete() == 1u)
-	{
-		printf("app_task: paquete transmitido\r\n");
-	}
+    /* Espera confirmación de transmision */
+    status = mrf24j40_get_tx_complete(&tx_complete);
+    if ((status == MRF24J40_OK) && (tx_complete == true))
+    {
+        printf("app_task: paquete transmitido\r\n");
+    }
 }
 
 static void app_build_test_frame(void)

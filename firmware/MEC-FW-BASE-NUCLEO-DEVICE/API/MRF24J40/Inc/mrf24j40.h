@@ -30,12 +30,17 @@
  *
  * @details
  * This driver provides:
- *  - Short/Long register access over SPI
+ *  - basic transceiver initialization
  *  - RX FIFO safe read
  *  - TX Normal FIFO write + trigger (ACK optional)
- *  - Basic configuration helpers (PAN ID, short addr, channel)
+ *  - basic configuration helpers (PAN ID, short address, extended address)
+ *  - interrupt event decoding
  *
  * It does NOT implement MiWi itself; it exposes primitives used by a MiWi stack.
+ *
+ * Public functions return @ref mrf24j40_status_t so that:
+ *  - hardware and timeout errors propagated from the port layer can be reported
+ *  - driver-level state and frame validation errors can be distinguished
  *
  * @ingroup mrf24j40
  * @{
@@ -69,6 +74,33 @@
 #define MRF24J40_MAX_FRAME_SIZE        ((uint8_t)125u)
 
 /* ============================== Types ==================================== */
+
+/**
+ * @brief Status codes returned by the MRF24J40 driver.
+ *
+ * @details
+ * These codes include:
+ * - errors propagated from the underlying port layer
+ * - errors detected by this driver layer itself
+ *
+ * Driver-level errors are used to report conditions such as:
+ * - invalid API usage
+ * - invalid internal state for the requested operation
+ * - missing RX packet indication
+ * - invalid received frame format or length
+ */
+typedef enum
+{
+    MRF24J40_OK = 0,
+    MRF24J40_E_NULL,
+    MRF24J40_E_PARAM,
+    MRF24J40_E_HW,
+    MRF24J40_E_TIMEOUT,
+    MRF24J40_E_STATE,
+    MRF24J40_E_NO_RX_PACKET,
+    MRF24J40_E_FRAME
+} mrf24j40_status_t;
+
 /**
  * @brief MRF24J40 runtime context.
  *
@@ -108,6 +140,13 @@ typedef struct
 /**
  * @brief Initialize the MRF24J40 with the basic datasheet-recommended setup.
  *
+ * @return
+ * - MRF24J40_OK: Initialization completed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
+ *
  * @details
  * This function performs the base transceiver initialization recommended by the
  * datasheet for normal operation.
@@ -140,10 +179,17 @@ typedef struct
  * PAN ID, addresses and higher-layer protocol settings are expected to be
  * configured separately.
  */
-void mrf24j40_init(void);
+mrf24j40_status_t mrf24j40_init(void);
 
 /**
  * @brief Configure the MRF24J40 as a nonbeacon-enabled PAN coordinator.
+ *
+ * @return
+ * - MRF24J40_OK: Configuration completed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
  * This function applies the MAC settings required by the datasheet for a
@@ -157,10 +203,17 @@ void mrf24j40_init(void);
  * This function configures only the MAC operating mode and coordinator role.
  * It does not assign PAN ID, short address or extended address.
  */
-void mrf24j40_configure_nonbeacon_pan_coordinator(void);
+mrf24j40_status_t mrf24j40_configure_nonbeacon_pan_coordinator(void);
 
 /**
  * @brief Configure the MRF24J40 as a nonbeacon-enabled device.
+ *
+ * @return
+ * - MRF24J40_OK: Configuration completed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
  * This function applies the MAC settings required by the datasheet for a
@@ -174,12 +227,19 @@ void mrf24j40_configure_nonbeacon_pan_coordinator(void);
  * This function configures only the MAC operating mode and device role.
  * It does not assign PAN ID, short address or extended address.
  */
-void mrf24j40_configure_nonbeacon_device(void);
+mrf24j40_status_t mrf24j40_configure_nonbeacon_device(void);
 
 /**
  * @brief Set the PAN ID of the device.
  *
  * @param pan_id 16-bit PAN identifier.
+ *
+ * @return
+ * - MRF24J40_OK: PAN ID programmed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
  * The PAN ID identifies the network to which the device belongs.
@@ -189,12 +249,19 @@ void mrf24j40_configure_nonbeacon_device(void);
  * - PANIDL (LSB)
  * - PANIDH (MSB)
  */
-void mrf24j40_set_pan_id(uint16_t pan_id);
+mrf24j40_status_t mrf24j40_set_pan_id(uint16_t pan_id);
 
 /**
  * @brief Set the short address of the device.
  *
  * @param short_address 16-bit short address.
+ *
+ * @return
+ * - MRF24J40_OK: Short address programmed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
  * The short address identifies the node within the PAN.
@@ -202,10 +269,17 @@ void mrf24j40_set_pan_id(uint16_t pan_id);
  * - SADRL (LSB)
  * - SADRH (MSB)
  */
-void mrf24j40_set_short_address(uint16_t short_address);
+mrf24j40_status_t mrf24j40_set_short_address(uint16_t short_address);
 
 /**
  * @brief Generate and program the extended address from the STM32 unique ID.
+ *
+ * @return
+ * - MRF24J40_OK: Extended address programmed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
  * This function reads the 96-bit STM32 unique device identifier, computes a
@@ -226,7 +300,7 @@ void mrf24j40_set_short_address(uint16_t short_address);
  * @note
  * The resulting address is not an IEEE-assigned global EUI-64.
  */
-void mrf24j40_set_extended_address(void);
+mrf24j40_status_t mrf24j40_set_extended_address(void);
 
 /**
  * @brief Notify the driver that the MRF24J40 INT pin asserted.
@@ -243,6 +317,14 @@ void mrf24j40_set_interrupt_pending(void);
 /**
  * @brief Decode the pending MRF24J40 interrupt source flags.
  *
+ * @return
+ * - MRF24J40_OK: Interrupt flags were decoded successfully.
+ * - MRF24J40_E_STATE: No pending interrupt had been previously latched.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
+ *
  * @details
  * If a pending INT pin event was previously latched by
  * mrf24j40_set_interrupt_pending(), this function reads INTSTAT and updates
@@ -253,12 +335,22 @@ void mrf24j40_set_interrupt_pending(void);
  * @note
  * INTSTAT bits are cleared by hardware when the register is read.
  */
-void mrf24j40_update_interrupt_flags(void);
+mrf24j40_status_t mrf24j40_update_interrupt_flags(void);
 
 /**
  * @brief Read one received packet from the RXFIFO.
  *
  * @param p_packet Pointer to packet container.
+ *
+ * @return
+ * - MRF24J40_OK: RX packet was read successfully.
+ * - MRF24J40_E_NULL: Null pointer passed in @p p_packet.
+ * - MRF24J40_E_NO_RX_PACKET: No RX packet was pending.
+ * - MRF24J40_E_FRAME: The received frame length was invalid.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
  * This function follows the basic RXFIFO read sequence described in the
@@ -273,7 +365,7 @@ void mrf24j40_update_interrupt_flags(void);
  *
  * On successful completion, the internal RX pending flag is cleared.
  */
-bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet);
+mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet);
 
 /**
  * @brief Load and trigger transmission through the TX Normal FIFO.
@@ -281,7 +373,13 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet);
  * @param p_packet Pointer to MAC frame container.
  * @param ack_request Set to true if an acknowledgment is expected.
  *
- * @return true if the frame was accepted for transmission, otherwise false.
+ * @return
+ * - MRF24J40_OK: The frame was loaded and transmission was triggered.
+ * - MRF24J40_E_NULL: Null pointer passed in @p p_packet.
+ * - MRF24J40_E_PARAM: Invalid frame length or invalid register access
+ *   parameter detected by the port layer.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
  *
  * @details
  * The packet format used by this driver is:
@@ -298,18 +396,27 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet);
  * If @p ack_request is true, the caller must also set the acknowledgment
  * request bit in the MAC Frame Control field.
  */
-bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet, bool ack_request);
+mrf24j40_status_t mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
+                                                bool ack_request);
 
 /**
  * @brief Get and clear the TX complete indication.
  *
- * @return true if a TX Normal FIFO completion event was latched, otherwise false.
+ * @param[out] p_tx_complete Pointer to the destination where the TX complete
+ *                           state will be stored.
+ *
+ * @return
+ * - MRF24J40_OK: The TX complete state was returned successfully.
+ * - MRF24J40_E_NULL: Null pointer passed in @p p_tx_complete.
  *
  * @details
- * This function consumes the internal TX completion flag set by
- * mrf24j40_update_interrupt_flags() when a TXNIF event is detected.
+ * This function reports whether a TX Normal FIFO completion event had been
+ * latched by mrf24j40_update_interrupt_flags() when a TXNIF event was
+ * detected.
+ *
+ * If a completion was pending, it is consumed and cleared before returning.
  */
-bool mrf24j40_get_tx_complete(void);
+mrf24j40_status_t mrf24j40_get_tx_complete(bool * const p_tx_complete);
 
 #endif /* MRF24J40_H_ */
 

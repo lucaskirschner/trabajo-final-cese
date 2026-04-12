@@ -121,71 +121,139 @@ static mrf24j40_context_t mrf24j40_ctx;
 
 /* ========================== Private Prototypes =========================== */
 
-static void mrf24j40_rf_state_reset(void);
-static void mrf24j40_configure_nonbeacon_network(void);
+static mrf24j40_status_t mrf24j40_rf_state_reset(void);
+static mrf24j40_status_t mrf24j40_configure_nonbeacon_network(void);
 static uint64_t mrf24j40_crc64_ecma(const uint8_t * data, uint32_t length);
-static void mrf24j40_set_rxdecinv(bool enable);
+static mrf24j40_status_t mrf24j40_set_rxdecinv(bool enable);
+static mrf24j40_status_t mrf24j40_from_port_status(mrf24j40_port_status_t status);
 
 /* ===================== Public Function Definitions ======================= */
 
-void mrf24j40_init(void)
+mrf24j40_status_t mrf24j40_init(void)
 {
+    mrf24j40_status_t status;
+
     /* Step 1: Perform software reset (RSTPWR, RSTBB and RSTMAC). */
-    mrf24j40_port_write_short(SOFTRST,
-                         	 (uint8_t)(SOFTRST_RSTPWR |
-                         			   SOFTRST_RSTBB  |
-									   SOFTRST_RSTMAC));
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(SOFTRST,
+                                  (uint8_t)(SOFTRST_RSTPWR |
+                                            SOFTRST_RSTBB  |
+                                            SOFTRST_RSTMAC)));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 2: Initialize FIFOEN = 1 and TXONTS = 0x6. */
-    mrf24j40_port_write_short(PACON2,
-                         	 (uint8_t)(PACON2_FIFOEN  |
-                         			   PACON2_TXONTS2 |
-									   PACON2_TXONTS1));
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(PACON2,
+                                  (uint8_t)(PACON2_FIFOEN  |
+                                            PACON2_TXONTS2 |
+                                            PACON2_TXONTS1)));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 3: Initialize RFSTBL = 0x9, MSIFS = reset default preserved. */
-    mrf24j40_port_write_short(TXSTBL,
-                         	 (uint8_t)(TXSTBL_RFSTBL3 |
-                         			   TXSTBL_RFSTBL0 |
-									   TXSTBL_MSIFS2  |
-									   TXSTBL_MSIFS0));
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(TXSTBL,
+                                  (uint8_t)(TXSTBL_RFSTBL3 |
+                                            TXSTBL_RFSTBL0 |
+                                            TXSTBL_MSIFS2  |
+                                            TXSTBL_MSIFS0)));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 4: Initialize RFOPT = 0x03 on RFCON0, keeping channel at default
      * encoded value 0x00 (IEEE channel 11).
      */
-    mrf24j40_port_write_long(RFCON0,
-    						(uint8_t)((MRF24J40_INIT_DEFAULT_CHANNEL << 4u) |
-    		                           MRF24J40_INIT_RFOPT_VALUE));
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(RFCON0,
+                                 (uint8_t)((MRF24J40_INIT_DEFAULT_CHANNEL << 4u) |
+                                           MRF24J40_INIT_RFOPT_VALUE)));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 5: Initialize VCOOPT = 0x02. */
-    mrf24j40_port_write_long(RFCON1, MRF24J40_INIT_VCOOPT_VALUE);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(RFCON1, MRF24J40_INIT_VCOOPT_VALUE));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 6: Enable PLL. */
-    mrf24j40_port_write_long(RFCON2, RFCON2_PLLEN);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(RFCON2, RFCON2_PLLEN));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 7: Initialize TXFIL = 1 and 20MRECVR = 1. */
-    mrf24j40_port_write_long(RFCON6,
-                        	(uint8_t)(RFCON6_TXFIL    |
-                        			  RFCON6_20MRECVR));
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(RFCON6,
+                                 (uint8_t)(RFCON6_TXFIL    |
+                                           RFCON6_20MRECVR)));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 8: Select 100 kHz internal oscillator for sleep clock. */
-    mrf24j40_port_write_long(RFCON7, RFCON7_SLPCLKSEL_100KHZ);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(RFCON7, RFCON7_SLPCLKSEL_100KHZ));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 9: Initialize RFVCO = 1. */
-    mrf24j40_port_write_long(RFCON8, RFCON8_RFVCO);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(RFCON8, RFCON8_RFVCO));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 10: Initialize CLKOUTEN = 1 and SLPCLKDIV = 0x01. */
-    mrf24j40_port_write_long(SLPCON1,
-                        	(uint8_t)(SLPCON1_CLKOUTEN   |
-                        			  SLPCON1_SLPCLKDIV0));
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(SLPCON1,
+                                 (uint8_t)(SLPCON1_CLKOUTEN   |
+                                           SLPCON1_SLPCLKDIV0)));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 11: For nonbeacon-enabled operation, set CCA mode to ED. */
-    mrf24j40_port_write_short(BBREG2, BBREG2_CCAMODE_1);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(BBREG2, BBREG2_CCAMODE_1));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 12: Set CCA energy detection threshold. */
-    mrf24j40_port_write_short(CCAEDTH, MRF24J40_INIT_CCAEDTH_VALUE);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(CCAEDTH, MRF24J40_INIT_CCAEDTH_VALUE));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 13: Append RSSI value to RX FIFO. */
-    mrf24j40_port_write_short(BBREG6, BBREG6_RSSIMODE2);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(BBREG6, BBREG6_RSSIMODE2));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 14: Enable interrupts.
      *
@@ -195,13 +263,18 @@ void mrf24j40_init(void)
      *
      * For this minimal base case, enable RXIE and TXNIE interrupts only.
      */
-    mrf24j40_port_write_short(INTCON,
-                         	 (uint8_t)(INTCON_SLPIE     |
-                         			   INTCON_WAKEIE    |
-									   INTCON_HSYMTMRIE |
-									   INTCON_SECIE     |
-									   INTCON_TXG2IE    |
-									   INTCON_TXG1IE));
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(INTCON,
+                                  (uint8_t)(INTCON_SLPIE     |
+                                            INTCON_WAKEIE    |
+                                            INTCON_HSYMTMRIE |
+                                            INTCON_SECIE     |
+                                            INTCON_TXG2IE    |
+                                            INTCON_TXG1IE)));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 15: Set channel.
      *
@@ -210,34 +283,86 @@ void mrf24j40_init(void)
      */
 
     /* Step 16: Set transmitter power. */
-    mrf24j40_port_write_long(RFCON3, MRF24J40_INIT_TX_POWER_VALUE);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(RFCON3, MRF24J40_INIT_TX_POWER_VALUE));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Steps 17, 18 and 19: Reset RF state machine and wait for calibration. */
-    mrf24j40_rf_state_reset();
+    status = mrf24j40_rf_state_reset();
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    return MRF24J40_OK;
 }
 
-void mrf24j40_configure_nonbeacon_pan_coordinator(void)
+mrf24j40_status_t mrf24j40_configure_nonbeacon_pan_coordinator(void)
 {
-    uint8_t reg_value;
+	mrf24j40_status_t status;
+	uint8_t reg_value;
 
-    mrf24j40_configure_nonbeacon_network();
-    mrf24j40_port_read_short(RXMCR, &reg_value);
+    status = mrf24j40_configure_nonbeacon_network();
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_short(RXMCR, &reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
     reg_value |= MRF24J40_RXMCR_PANCOORD_MASK;
-    mrf24j40_port_write_short(RXMCR, reg_value);
+
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(RXMCR, reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    return MRF24J40_OK;
 }
 
-void mrf24j40_configure_nonbeacon_device(void)
+mrf24j40_status_t mrf24j40_configure_nonbeacon_device(void)
 {
+    mrf24j40_status_t status;
     uint8_t reg_value;
 
-    mrf24j40_configure_nonbeacon_network();
-    mrf24j40_port_read_short(RXMCR, &reg_value);
+    status = mrf24j40_configure_nonbeacon_network();
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_short(RXMCR, &reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
     reg_value &= (uint8_t)(~MRF24J40_RXMCR_PANCOORD_MASK);
-    mrf24j40_port_write_short(RXMCR, reg_value);
+
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(RXMCR, reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    return MRF24J40_OK;
 }
 
-void mrf24j40_set_pan_id(uint16_t pan_id)
+mrf24j40_status_t mrf24j40_set_pan_id(uint16_t pan_id)
 {
+	mrf24j40_status_t status;
     uint8_t pan_id_lsb;
     uint8_t pan_id_msb;
 
@@ -246,14 +371,27 @@ void mrf24j40_set_pan_id(uint16_t pan_id)
     pan_id_msb = (uint8_t)((pan_id >> 8u) & 0xFFu);
 
     /* Write PAN ID LSB */
-    mrf24j40_port_write_short(PANIDL, pan_id_lsb);
+    status = mrf24j40_from_port_status(
+    		 mrf24j40_port_write_short(PANIDL, pan_id_lsb));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Write PAN ID MSB */
-    mrf24j40_port_write_short(PANIDH, pan_id_msb);
+    status = mrf24j40_from_port_status(
+    		 mrf24j40_port_write_short(PANIDH, pan_id_msb));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    return MRF24J40_OK;
 }
 
-void mrf24j40_set_short_address(uint16_t short_address)
+mrf24j40_status_t mrf24j40_set_short_address(uint16_t short_address)
 {
+    mrf24j40_status_t status;
     uint8_t short_address_lsb;
     uint8_t short_address_msb;
 
@@ -262,14 +400,27 @@ void mrf24j40_set_short_address(uint16_t short_address)
     short_address_msb = (uint8_t)((short_address >> 8u) & 0xFFu);
 
     /* Write Short Address LSB */
-    mrf24j40_port_write_short(SADRL, short_address_lsb);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(SADRL, short_address_lsb));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Write Short Address MSB */
-    mrf24j40_port_write_short(SADRH, short_address_msb);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(SADRH, short_address_msb));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    return MRF24J40_OK;
 }
 
-void mrf24j40_set_extended_address(void)
+mrf24j40_status_t mrf24j40_set_extended_address(void)
 {
+    mrf24j40_status_t status;
     uint32_t uid_w0;
     uint32_t uid_w1;
     uint32_t uid_w2;
@@ -282,9 +433,9 @@ void mrf24j40_set_extended_address(void)
     uid_w1 = HAL_GetUIDw1();
     uid_w2 = HAL_GetUIDw2();*/
 
-    uid_w0 = 0x12345678u;
-	uid_w1 = 0x9ABCDEF0u;
-	uid_w2 = 0x0FEDCBA9u;
+    uid_w0 = 0x12345678u;    /* TODO hardcodeado */
+    uid_w1 = 0x9ABCDEF0u;    /* TODO hardcodeado */
+    uid_w2 = 0x0FEDCBA9u;    /* TODO hardcodeado */
 
     uid_bytes[0]  = (uint8_t)(uid_w0 & 0xFFu);
     uid_bytes[1]  = (uint8_t)((uid_w0 >> 8u) & 0xFFu);
@@ -317,8 +468,15 @@ void mrf24j40_set_extended_address(void)
     {
         addr_byte = (uint8_t)((extended_address >> (8u * i)) & 0xFFu);
 
-        mrf24j40_port_write_short((uint8_t)(EADR0 + i), addr_byte);
+        status = mrf24j40_from_port_status(
+            mrf24j40_port_write_short((uint8_t)(EADR0 + i), addr_byte));
+        if (status != MRF24J40_OK)
+        {
+            return status;
+        }
     }
+
+    return MRF24J40_OK;
 }
 
 void mrf24j40_set_interrupt_pending(void)
@@ -326,20 +484,26 @@ void mrf24j40_set_interrupt_pending(void)
     mrf24j40_ctx.int_pending = true;
 }
 
-void mrf24j40_update_interrupt_flags(void)
+mrf24j40_status_t mrf24j40_update_interrupt_flags(void)
 {
-	/* This minimal driver currently handles only RXIF and TXNIF, because only
-	 * RXIE and TXNIE are enabled in the base initialization.
-	 */
-
+    mrf24j40_status_t status;
     uint8_t intstat;
+
+    /* This minimal driver currently handles only RXIF and TXNIF, because only
+     * RXIE and TXNIE are enabled in the base initialization.
+     */
 
     if (mrf24j40_ctx.int_pending == false)
     {
-        return;
+        return MRF24J40_E_STATE;
     }
 
-    mrf24j40_port_read_short(INTSTAT, &intstat);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_short(INTSTAT, &intstat));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     if ((intstat & INTSTAT_RXIF) != 0u)
     {
@@ -352,10 +516,13 @@ void mrf24j40_update_interrupt_flags(void)
     }
 
     mrf24j40_ctx.int_pending = false;
+
+    return MRF24J40_OK;
 }
 
-bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
+mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
 {
+    mrf24j40_status_t status;
     uint8_t rx_frame_length;
     uint16_t addr;
     uint8_t i;
@@ -363,13 +530,13 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     /* Validate output packet pointer. */
     if (p_packet == NULL)
     {
-        return false;
+        return MRF24J40_E_NULL;
     }
 
     /* Exit if no receive event was previously latched by application code. */
     if (mrf24j40_ctx.rx_pending == false)
     {
-        return false;
+        return MRF24J40_E_NO_RX_PACKET;
     }
 
     /* Step 1: Disable host interrupts to avoid interruption while reading the
@@ -380,7 +547,12 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     /* Step 2: Set RXDECINV = 1 to prevent the receiver from accepting a new
      * packet from the air while the current RXFIFO contents are being read.
      */
-    mrf24j40_set_rxdecinv(true);
+    status = mrf24j40_set_rxdecinv(true);
+    if (status != MRF24J40_OK)
+    {
+        __enable_irq();
+        return status;
+    }
 
     /* Step 3: Read RXFIFO first byte at address 0x300.
      *
@@ -389,15 +561,22 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
      * - payload
      * - FCS
      */
-    mrf24j40_port_read_long(RX_FIFO, &rx_frame_length);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_long(RX_FIFO, &rx_frame_length));
+    if (status != MRF24J40_OK)
+    {
+        (void)mrf24j40_set_rxdecinv(false);
+        __enable_irq();
+        return status;
+    }
 
     /* A valid received frame must include at least the 2-byte FCS field. */
     if (rx_frame_length < MRF24J40_FCS_LENGTH)
     {
-        mrf24j40_set_rxdecinv(false);
+        (void)mrf24j40_set_rxdecinv(false);
         mrf24j40_ctx.rx_pending = false;
         __enable_irq();
-        return false;
+        return MRF24J40_E_FRAME;
     }
 
     /* The public packet representation excludes the FCS.
@@ -410,10 +589,10 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     /* Reject invalid lengths that do not fit in the public packet buffer. */
     if (p_packet->frame_length > MRF24J40_MAX_FRAME_SIZE)
     {
-        mrf24j40_set_rxdecinv(false);
+        (void)mrf24j40_set_rxdecinv(false);
         mrf24j40_ctx.rx_pending = false;
         __enable_irq();
-        return false;
+        return MRF24J40_E_FRAME;
     }
 
     /* Step 4: Read RXFIFO frame bytes starting at address 0x301.
@@ -426,7 +605,15 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
 
     for (i = 0u; i < p_packet->frame_length; i++)
     {
-        mrf24j40_port_read_long(addr, &p_packet->frame[i]);
+        status = mrf24j40_from_port_status(
+            mrf24j40_port_read_long(addr, &p_packet->frame[i]));
+        if (status != MRF24J40_OK)
+        {
+            (void)mrf24j40_set_rxdecinv(false);
+            __enable_irq();
+            return status;
+        }
+
         addr++;
     }
 
@@ -436,14 +623,33 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     /* Step 5: Read LQI value, located immediately after the frame and FCS
      * bytes.
      */
-    mrf24j40_port_read_long(addr, &p_packet->lqi);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_long(addr, &p_packet->lqi));
+    if (status != MRF24J40_OK)
+    {
+        (void)mrf24j40_set_rxdecinv(false);
+        __enable_irq();
+        return status;
+    }
     addr++;
 
     /* Step 6: Read RSSI value, located immediately after LQI. */
-    mrf24j40_port_read_long(addr, &p_packet->rssi);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_long(addr, &p_packet->rssi));
+    if (status != MRF24J40_OK)
+    {
+        (void)mrf24j40_set_rxdecinv(false);
+        __enable_irq();
+        return status;
+    }
 
     /* Step 7: Clear RXDECINV = 0 to restore normal packet reception. */
-    mrf24j40_set_rxdecinv(false);
+    status = mrf24j40_set_rxdecinv(false);
+    if (status != MRF24J40_OK)
+    {
+        __enable_irq();
+        return status;
+    }
 
     /* Clear local RX pending indication now that the packet has been consumed. */
     mrf24j40_ctx.rx_pending = false;
@@ -451,12 +657,13 @@ bool mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     /* Re-enable host interrupts after the complete RXFIFO read sequence. */
     __enable_irq();
 
-    return true;
+    return MRF24J40_OK;
 }
 
-bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
-                                   bool ack_request)
+mrf24j40_status_t mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
+                                                bool ack_request)
 {
+    mrf24j40_status_t status;
     uint8_t txncon_value;
     uint16_t addr;
     uint8_t i;
@@ -464,7 +671,7 @@ bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
     /* Validate input packet pointer. */
     if (p_packet == NULL)
     {
-        return false;
+        return MRF24J40_E_NULL;
     }
 
     /* Reject invalid frame lengths that do not fit in the public packet
@@ -473,7 +680,7 @@ bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
     if ((p_packet->frame_length == 0u) ||
         (p_packet->frame_length > MRF24J40_MAX_FRAME_SIZE))
     {
-        return false;
+        return MRF24J40_E_PARAM;
     }
 
     /* Clear previous TX completion indication before starting a new
@@ -485,7 +692,12 @@ bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
      *
      * In unsecure mode, the header length field is ignored by the device.
      */
-    mrf24j40_port_write_long(TX_NORMAL_FIFO, 0u);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long(TX_NORMAL_FIFO, 0u));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 2: Load TX Normal FIFO second byte with frame length.
      *
@@ -496,8 +708,13 @@ bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
      * The FCS is not part of the public packet and is appended automatically
      * by the MRF24J40 during transmission.
      */
-    mrf24j40_port_write_long((uint16_t)(TX_NORMAL_FIFO + 1u),
-                             p_packet->frame_length);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_long((uint16_t)(TX_NORMAL_FIFO + 1u),
+                                 p_packet->frame_length));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     /* Step 3: Load TX Normal FIFO frame bytes starting at address 0x002.
      *
@@ -507,7 +724,13 @@ bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
 
     for (i = 0u; i < p_packet->frame_length; i++)
     {
-        mrf24j40_port_write_long(addr, p_packet->frame[i]);
+        status = mrf24j40_from_port_status(
+            mrf24j40_port_write_long(addr, p_packet->frame[i]));
+        if (status != MRF24J40_OK)
+        {
+            return status;
+        }
+
         addr++;
     }
 
@@ -526,21 +749,34 @@ bool mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
     /* Step 5: Trigger transmission by setting TXNTRIG = 1. */
     txncon_value |= TXNCON_TXNTRIG;
 
-    mrf24j40_port_write_short(TXNCON, txncon_value);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(TXNCON, txncon_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
-    return true;
+    return MRF24J40_OK;
 }
 
-bool mrf24j40_get_tx_complete(void)
+mrf24j40_status_t mrf24j40_get_tx_complete(bool * const p_tx_complete)
 {
+    if (p_tx_complete == NULL)
+    {
+        return MRF24J40_E_NULL;
+    }
+
     if (mrf24j40_ctx.tx_complete == false)
     {
-        return false;
+        *p_tx_complete = false;
+        return MRF24J40_OK;
     }
 
     mrf24j40_ctx.tx_complete = false;
 
-    return true;
+    *p_tx_complete = true;
+
+    return MRF24J40_OK;
 }
 
 /* ===================== Private Function Definitions ====================== */
@@ -548,19 +784,49 @@ bool mrf24j40_get_tx_complete(void)
 /**
  * @brief Reset the internal RF state machine and wait for calibration.
  *
+ * @return
+ * - MRF24J40_OK: RF state reset sequence completed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
+ *
  * @details
  * The datasheet requires setting RFRST, then clearing it, and waiting at least
  * 192 us for RF calibration to complete.
  */
-static void mrf24j40_rf_state_reset(void)
+static mrf24j40_status_t mrf24j40_rf_state_reset(void)
 {
-	mrf24j40_port_write_short(RFCTL, RFCTL_RFRST);
-	mrf24j40_port_write_short(RFCTL, 0x00u);
+    mrf24j40_status_t status;
+
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(RFCTL, RFCTL_RFRST));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(RFCTL, 0x00u));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
     mrf24j40_port_delay_ms(MRF24J40_RF_STATE_RESET_DELAY_MS);
+
+    return MRF24J40_OK;
 }
 
 /**
  * @brief Configure common MAC settings for nonbeacon-enabled operation.
+ *
+ * @return
+ * - MRF24J40_OK: MAC configuration completed successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
  * This helper applies the common settings required by the datasheet for a
@@ -572,16 +838,37 @@ static void mrf24j40_rf_state_reset(void)
  * Role selection (PAN coordinator or device) is intentionally handled by the
  * public role-specific functions.
  */
-static void mrf24j40_configure_nonbeacon_network(void)
+static mrf24j40_status_t mrf24j40_configure_nonbeacon_network(void)
 {
+    mrf24j40_status_t status;
     uint8_t reg_value;
 
     /* Configure BO = 15 and SO = 15. */
-    mrf24j40_port_write_short(ORDER, MRF24J40_ORDER_NONBEACON_VALUE);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(ORDER, MRF24J40_ORDER_NONBEACON_VALUE));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
     /* Clear SLOTTED to select unslotted CSMA-CA mode. */
-    mrf24j40_port_read_short(TXMCR, &reg_value);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_short(TXMCR, &reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
     reg_value &= (uint8_t)(~MRF24J40_TXMCR_SLOTTED_MASK);
-    mrf24j40_port_write_short(TXMCR, reg_value);
+
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(TXMCR, reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    return MRF24J40_OK;
 }
 
 /**
@@ -593,10 +880,11 @@ static void mrf24j40_configure_nonbeacon_network(void)
  * @return 64-bit CRC value.
  *
  * @details
- * Polynomial: 0x42F0E1EBA9EA3693
- * Initial value: 0x0000000000000000
- * No reflection
- * No final XOR
+ * CRC parameters:
+ * - Polynomial: 0x42F0E1EBA9EA3693
+ * - Initial value: 0x0000000000000000
+ * - No reflection
+ * - No final XOR
  */
 static uint64_t mrf24j40_crc64_ecma(const uint8_t * data, uint32_t length)
 {
@@ -631,6 +919,13 @@ static uint64_t mrf24j40_crc64_ecma(const uint8_t * data, uint32_t length)
  *
  * @param enable Set to true to disable packet reception, false to enable it.
  *
+ * @return
+ * - MRF24J40_OK: RX decode inversion state updated successfully.
+ * - MRF24J40_E_HW: A hardware communication error occurred.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
+ *
  * @details
  * This function controls the RXDECINV bit in the BBREG1 register.
  *
@@ -644,11 +939,17 @@ static uint64_t mrf24j40_crc64_ecma(const uint8_t * data, uint32_t length)
  * This mechanism is used to ensure atomic access to the RXFIFO buffer
  * in systems where reception and SPI access may overlap.
  */
-static void mrf24j40_set_rxdecinv(bool enable)
+static mrf24j40_status_t mrf24j40_set_rxdecinv(bool enable)
 {
+    mrf24j40_status_t status;
     uint8_t reg_value;
 
-    mrf24j40_port_read_short(BBREG1, &reg_value);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_read_short(BBREG1, &reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
 
     if (enable == true)
     {
@@ -659,6 +960,63 @@ static void mrf24j40_set_rxdecinv(bool enable)
         reg_value &= (uint8_t)(~BBREG1_RXDECINV);
     }
 
-    mrf24j40_port_write_short(BBREG1, reg_value);
+    status = mrf24j40_from_port_status(
+        mrf24j40_port_write_short(BBREG1, reg_value));
+    if (status != MRF24J40_OK)
+    {
+        return status;
+    }
+
+    return MRF24J40_OK;
 }
+
+/**
+ * @brief Translate a port-layer status code to the driver-layer status space.
+ *
+ * @param status Status code returned by the MRF24J40 port layer.
+ *
+ * @return Equivalent status code in the @ref mrf24j40_status_t domain.
+ *
+ * @details
+ * This helper preserves the abstraction boundary between the driver and the
+ * underlying port layer by converting low-level access results into the
+ * public driver status type.
+ *
+ * Any unknown port-layer status is conservatively mapped to
+ * MRF24J40_E_HW.
+ */
+static mrf24j40_status_t mrf24j40_from_port_status(mrf24j40_port_status_t status)
+{
+    mrf24j40_status_t ret;
+
+    switch (status)
+    {
+        case MRF24J40_PORT_OK:
+            ret = MRF24J40_OK;
+            break;
+
+        case MRF24J40_PORT_E_NULL:
+            ret = MRF24J40_E_NULL;
+            break;
+
+        case MRF24J40_PORT_E_PARAM:
+            ret = MRF24J40_E_PARAM;
+            break;
+
+        case MRF24J40_PORT_E_HW:
+            ret = MRF24J40_E_HW;
+            break;
+
+        case MRF24J40_PORT_E_TIMEOUT:
+            ret = MRF24J40_E_TIMEOUT;
+            break;
+
+        default:
+            ret = MRF24J40_E_HW;
+            break;
+    }
+
+    return ret;
+}
+
 /** @} */

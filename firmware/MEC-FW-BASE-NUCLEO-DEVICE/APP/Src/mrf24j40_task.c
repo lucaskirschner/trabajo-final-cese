@@ -133,6 +133,8 @@ void mrf24j40_task_init(const mrf24j40_task_config_t * p_config)
 
 void mrf24j40_task_run(void)
 {
+    bool tx_complete;
+
     if (mrf24j40_task_ctx.initialized == false)
     {
         return;
@@ -141,7 +143,7 @@ void mrf24j40_task_run(void)
     /* First decode any interrupt event previously latched by the low-level
      * driver.
      */
-    mrf24j40_update_interrupt_flags();
+    (void)mrf24j40_update_interrupt_flags();
 
     /* Process RX as early as possible so the received packet can be copied from
      * the low-level driver into the local task buffer.
@@ -159,20 +161,20 @@ void mrf24j40_task_run(void)
             break;
 
         case MRF24J40_TASK_STATE_INIT:
-            mrf24j40_init();
+            (void)mrf24j40_init();
 
             if (mrf24j40_task_ctx.config.role == MRF24J40_ROLE_PAN_COORDINATOR)
             {
-                mrf24j40_configure_nonbeacon_pan_coordinator();
+                (void)mrf24j40_configure_nonbeacon_pan_coordinator();
             }
             else
             {
-                mrf24j40_configure_nonbeacon_device();
+                (void)mrf24j40_configure_nonbeacon_device();
             }
 
-            mrf24j40_set_pan_id(mrf24j40_task_ctx.config.pan_id);
-            mrf24j40_set_short_address(mrf24j40_task_ctx.config.short_address);
-            mrf24j40_set_extended_address();
+            (void)mrf24j40_set_pan_id(mrf24j40_task_ctx.config.pan_id);
+            (void)mrf24j40_set_short_address(mrf24j40_task_ctx.config.short_address);
+            (void)mrf24j40_set_extended_address();
 
             mrf24j40_task_ctx.ready = true;
             mrf24j40_task_ctx.state = MRF24J40_TASK_STATE_IDLE;
@@ -187,7 +189,7 @@ void mrf24j40_task_run(void)
 
         case MRF24J40_TASK_STATE_TX_START:
             if (mrf24j40_write_tx_normal_fifo(&mrf24j40_task_ctx.tx_packet,
-                                              mrf24j40_task_ctx.tx_ack_request) == true)
+                                              mrf24j40_task_ctx.tx_ack_request) == MRF24J40_OK)
             {
                 mrf24j40_task_ctx.state = MRF24J40_TASK_STATE_TX_WAIT;
             }
@@ -201,10 +203,16 @@ void mrf24j40_task_run(void)
             break;
 
         case MRF24J40_TASK_STATE_TX_WAIT:
-            if (mrf24j40_get_tx_complete() == true)
+            if ((mrf24j40_get_tx_complete(&tx_complete) == MRF24J40_OK) &&
+                (tx_complete == true))
             {
                 mrf24j40_task_ctx.tx_pending = false;
                 mrf24j40_task_ctx.tx_done = true;
+
+                /* In this minimal implementation, TX completion is treated as a
+                 * successful transmission.
+                 * Future versions should refine this result by reading TXSTAT.
+                 */
                 mrf24j40_task_ctx.tx_success = true;
                 mrf24j40_task_ctx.state = MRF24J40_TASK_STATE_IDLE;
             }
@@ -253,7 +261,7 @@ mrf24j40_task_status_t mrf24j40_task_request_tx(const mrf24j40_packet_t * p_pack
         return MRF24J40_TASK_E_BUSY;
     }
 
-    if (mrf24j40_task_ctx.state != MRF24J40_TASK_STATE_IDLE)
+    if (mrf24j40_task_ctx.tx_pending == true)
     {
         return MRF24J40_TASK_E_BUSY;
     }
@@ -313,7 +321,7 @@ static void mrf24j40_task_process_rx(void)
         return;
     }
 
-    if (mrf24j40_read_rx_fifo(&mrf24j40_task_ctx.rx_packet) == true)
+    if (mrf24j40_read_rx_fifo(&mrf24j40_task_ctx.rx_packet) == MRF24J40_OK)
     {
         mrf24j40_task_ctx.rx_available = true;
     }
