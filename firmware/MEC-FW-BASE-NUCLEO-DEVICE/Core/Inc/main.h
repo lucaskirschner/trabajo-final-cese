@@ -67,10 +67,24 @@ void Error_Handler(void);
 #define INT_EXTI_IRQn EXTI0_IRQn
 #define GR_LED_Pin GPIO_PIN_0
 #define GR_LED_GPIO_Port GPIOB
+#define OUT_EN_Pin GPIO_PIN_9
+#define OUT_EN_GPIO_Port GPIOE
+#define SPI1_CS_VNI_Pin GPIO_PIN_14
+#define SPI1_CS_VNI_GPIO_Port GPIOD
+#define SPI1_CS_CLT_Pin GPIO_PIN_15
+#define SPI1_CS_CLT_GPIO_Port GPIOD
 #define RE_LED_Pin GPIO_PIN_4
 #define RE_LED_GPIO_Port GPIOG
-#define SPI3_CS_Pin GPIO_PIN_15
-#define SPI3_CS_GPIO_Port GPIOA
+#define RS485_RE_Pin GPIO_PIN_9
+#define RS485_RE_GPIO_Port GPIOA
+#define RS485_DE_Pin GPIO_PIN_10
+#define RS485_DE_GPIO_Port GPIOA
+#define RS485_RX_Pin GPIO_PIN_11
+#define RS485_RX_GPIO_Port GPIOA
+#define RS485_TX_Pin GPIO_PIN_12
+#define RS485_TX_GPIO_Port GPIOA
+#define SPI3_CS_MRF_Pin GPIO_PIN_15
+#define SPI3_CS_MRF_GPIO_Port GPIOA
 #define WAKE_Pin GPIO_PIN_2
 #define WAKE_GPIO_Port GPIOD
 

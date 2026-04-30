@@ -43,7 +43,6 @@
 /* ============================= Includes ================================== */
 
 #include "mrf24j40_port.h"
-
 #include "main.h"               /* GPIO pin mapping from user */
 #include "stm32h5xx_hal.h"      /* HAL SPI/GPIO/Delay */
 
@@ -255,7 +254,7 @@ void mrf24j40_port_delay_ms(uint32_t delay_ms)
  */
 static void mrf24j40_port_cs_assert(void)
 {
-    HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(SPI3_CS_MRF_GPIO_Port, SPI3_CS_MRF_Pin, GPIO_PIN_RESET);
 }
 
 /**
@@ -263,7 +262,7 @@ static void mrf24j40_port_cs_assert(void)
  */
 static void mrf24j40_port_cs_deassert(void)
 {
-    HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI3_CS_MRF_GPIO_Port, SPI3_CS_MRF_Pin, GPIO_PIN_SET);
 }
 
 

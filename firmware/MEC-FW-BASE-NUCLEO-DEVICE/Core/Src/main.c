@@ -21,8 +21,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "mrf24j40.h"
 #include "swo.h"
+#include "mrf24j40.h"
+#include "vni8200xp32.h"
+#include "sclt38bt8.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,9 +72,12 @@ typedef struct
 
 /* Private variables ---------------------------------------------------------*/
 
+SPI_HandleTypeDef hspi1;
 SPI_HandleTypeDef hspi3;
 
 TIM_HandleTypeDef htim6;
+
+UART_HandleTypeDef huart4;
 
 /* USER CODE BEGIN PV */
 
@@ -91,10 +96,15 @@ static void MX_GPIO_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM6_Init(void);
+static void MX_SPI1_Init(void);
+static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
 static void app_init(void);
 static void app_task(void);
 static void app_build_test_frame(void);
+
+static void IO_AppInit(void);
+static void IO_AppTask(void);
 
 /* USER CODE END PFP */
 
@@ -135,13 +145,16 @@ int main(void)
   MX_ICACHE_Init();
   MX_SPI3_Init();
   MX_TIM6_Init();
+  MX_SPI1_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
   printf("BOOT\r\n");
 
   /* Para toggle del led amarillo */
   HAL_TIM_Base_Start_IT(&htim6);
 
-  app_init();
+  //app_init();
+  IO_AppInit();
 
   /* USER CODE END 2 */
 
@@ -149,7 +162,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  app_task();
+	  //app_task();
+	  IO_AppTask();
 
     /* USER CODE END WHILE */
 
@@ -248,6 +262,54 @@ static void MX_ICACHE_Init(void)
 }
 
 /**
+  * @brief SPI1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SPI1_Init(void)
+{
+
+  /* USER CODE BEGIN SPI1_Init 0 */
+
+  /* USER CODE END SPI1_Init 0 */
+
+  /* USER CODE BEGIN SPI1_Init 1 */
+
+  /* USER CODE END SPI1_Init 1 */
+  /* SPI1 parameter configuration*/
+  hspi1.Instance = SPI1;
+  hspi1.Init.Mode = SPI_MODE_MASTER;
+  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
+  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
+  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
+  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
+  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
+  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
+  hspi1.Init.CRCPolynomial = 0x7;
+  hspi1.Init.NSSPMode = SPI_NSS_PULSE_DISABLE;
+  hspi1.Init.NSSPolarity = SPI_NSS_POLARITY_LOW;
+  hspi1.Init.FifoThreshold = SPI_FIFO_THRESHOLD_01DATA;
+  hspi1.Init.MasterSSIdleness = SPI_MASTER_SS_IDLENESS_00CYCLE;
+  hspi1.Init.MasterInterDataIdleness = SPI_MASTER_INTERDATA_IDLENESS_00CYCLE;
+  hspi1.Init.MasterReceiverAutoSusp = SPI_MASTER_RX_AUTOSUSP_DISABLE;
+  hspi1.Init.MasterKeepIOState = SPI_MASTER_KEEP_IO_STATE_DISABLE;
+  hspi1.Init.IOSwap = SPI_IO_SWAP_DISABLE;
+  hspi1.Init.ReadyMasterManagement = SPI_RDY_MASTER_MANAGEMENT_INTERNALLY;
+  hspi1.Init.ReadyPolarity = SPI_RDY_POLARITY_HIGH;
+  if (HAL_SPI_Init(&hspi1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN SPI1_Init 2 */
+
+  /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
   * @brief SPI3 Initialization Function
   * @param None
   * @retval None
@@ -334,6 +396,54 @@ static void MX_TIM6_Init(void)
 }
 
 /**
+  * @brief UART4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART4_Init(void)
+{
+
+  /* USER CODE BEGIN UART4_Init 0 */
+
+  /* USER CODE END UART4_Init 0 */
+
+  /* USER CODE BEGIN UART4_Init 1 */
+
+  /* USER CODE END UART4_Init 1 */
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = 115200;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_TX_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart4.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart4.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart4.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart4, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart4, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART4_Init 2 */
+
+  /* USER CODE END UART4_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -350,8 +460,9 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
-  __HAL_RCC_GPIOG_CLK_ENABLE();
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOG_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(YE_LED_GPIO_Port, YE_LED_Pin, GPIO_PIN_RESET);
@@ -360,10 +471,19 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GR_LED_GPIO_Port, GR_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, SPI1_CS_VNI_Pin|SPI1_CS_CLT_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(RE_LED_GPIO_Port, RE_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(SPI3_CS_GPIO_Port, SPI3_CS_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOA, RS485_RE_Pin|RS485_DE_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(SPI3_CS_MRF_GPIO_Port, SPI3_CS_MRF_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(WAKE_GPIO_Port, WAKE_Pin, GPIO_PIN_RESET);
@@ -394,6 +514,20 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GR_LED_GPIO_Port, &GPIO_InitStruct);
 
+  /*Configure GPIO pin : OUT_EN_Pin */
+  GPIO_InitStruct.Pin = OUT_EN_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(OUT_EN_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : SPI1_CS_VNI_Pin SPI1_CS_CLT_Pin WAKE_Pin */
+  GPIO_InitStruct.Pin = SPI1_CS_VNI_Pin|SPI1_CS_CLT_Pin|WAKE_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
   /*Configure GPIO pin : RE_LED_Pin */
   GPIO_InitStruct.Pin = RE_LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -401,19 +535,19 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(RE_LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : SPI3_CS_Pin */
-  GPIO_InitStruct.Pin = SPI3_CS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  HAL_GPIO_Init(SPI3_CS_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : WAKE_Pin */
-  GPIO_InitStruct.Pin = WAKE_Pin;
+  /*Configure GPIO pins : RS485_RE_Pin RS485_DE_Pin */
+  GPIO_InitStruct.Pin = RS485_RE_Pin|RS485_DE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(WAKE_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : SPI3_CS_MRF_Pin */
+  GPIO_InitStruct.Pin = SPI3_CS_MRF_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+  HAL_GPIO_Init(SPI3_CS_MRF_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
@@ -512,6 +646,51 @@ static void app_build_test_frame(void)
 	tx_packet.frame[11] = 0x03u;
 
 	tx_packet.frame_length = 12;
+}
+
+static void IO_AppInit(void)
+{
+    HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_SET);
+
+    printf("IO module init\r\n");
+    printf("VNI OUT_EN enabled\r\n");
+}
+
+
+static void IO_AppTask(void)
+{
+    static uint8_t outputs = 0u;
+
+    uint8_t inputs = 0u;
+    sclt38bt8_status_t sclt_status;
+    vni8200xp32_status_t vni_status;
+
+    sclt_status = sclt38bt8_read_inputs(&inputs);
+
+    if (sclt_status == SCLT38BT8_OK)
+    {
+        printf("SCLT inputs: 0x%02X\r\n", inputs);
+    }
+    else
+    {
+        printf("SCLT error: %d\r\n", (int)sclt_status);
+    }
+
+    vni_status = vni8200xp32_write_outputs(outputs);
+
+    if (vni_status == VNI8200XP32_OK)
+    {
+        printf("VNI outputs: 0x%02X\r\n", outputs);
+    }
+    else
+    {
+        printf("VNI error: %d\r\n", (int)vni_status);
+    }
+
+    outputs++;
+    if(outputs > 255) outputs = 0;
+
+    HAL_Delay(500);
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
