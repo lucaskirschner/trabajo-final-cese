@@ -64,3 +64,74 @@
 *.su
 *.idb
 *.pdb
+
+# ==============================
+# LATEX
+# ==============================
+
+# Core LaTeX auxiliary files
+*.aux
+*.lof
+*.log
+*.lot
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+
+# Bibliography auxiliary files
+*.bbl
+*.blg
+*.bcf
+*-blx.bib
+*-blx.aux
+*.run.xml
+
+# SyncTeX files
+*.synctex
+*.synctex.gz
+*.synctex(busy)
+*.synctex.gz(busy)
+
+# Intermediate documents
+*.dvi
+*.xdv
+*.ps
+
+# MakeIndex / glossaries / nomenclature
+*.idx
+*.ilg
+*.ind
+*.acn
+*.acr
+*.glg
+*.glo
+*.gls
+*.ist
+*.nlg
+*.nlo
+*.nls
+
+# Package-specific auxiliary files
+*.loa
+*.lol
+*.lot
+*.lof
+*.thm
+*.nav
+*.snm
+*.vrb
+*.tdo
+*.auxlock
+
+# Editor backup files
+*.bak
+*.sav
+*.backup
+*.swp
+*.tex~
+*.lyx~
+*~
+
+# TeXstudio temporary files
+*.txss
