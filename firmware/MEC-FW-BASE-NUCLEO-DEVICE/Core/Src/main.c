@@ -153,8 +153,8 @@ int main(void)
   /* Para toggle del led amarillo */
   HAL_TIM_Base_Start_IT(&htim6);
 
-  //app_init();
-  IO_AppInit();
+  app_init();
+  //IO_AppInit();
 
   /* USER CODE END 2 */
 
@@ -162,8 +162,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //app_task();
-	  IO_AppTask();
+	  app_task();
+	  //IO_AppTask();
 
     /* USER CODE END WHILE */
 
