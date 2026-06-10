@@ -47,6 +47,8 @@
 #include "main.h"               /* GPIO pin mapping from user */
 #include "stm32h5xx_hal.h"      /* HAL SPI/GPIO/Delay */
 
+#include "cmsis_os2.h"
+
 /* ============================ Local Macros =============================== */
 /**
  * @brief SPI timeout used by blocking transfers.
@@ -132,7 +134,7 @@ mrf24j40_port_status_t mrf24j40_port_read_short(uint8_t reg, uint8_t * const val
         return MRF24J40_PORT_E_PARAM;
     }
 
-    tx_buffer[0] = (uint8_t)(reg << 1u);
+    tx_buffer[0] = (uint8_t)((reg & 0b00111111) << 1u);
     tx_buffer[1] = MRF24J40_SPI_DUMMY_BYTE;
 
     mrf24j40_port_cs_assert();
@@ -245,7 +247,19 @@ mrf24j40_port_status_t mrf24j40_port_read_long(uint16_t reg, uint8_t * const val
 
 void mrf24j40_port_delay_ms(uint32_t delay_ms)
 {
-	HAL_Delay(delay_ms);
+    if (delay_ms == 0u)
+    {
+        return;
+    }
+
+    if (osKernelGetState() == osKernelRunning)
+    {
+        osDelay(delay_ms);
+    }
+    else
+    {
+        HAL_Delay(delay_ms);
+    }
 }
 
 /* ===================== Private Function Definitions ====================== */

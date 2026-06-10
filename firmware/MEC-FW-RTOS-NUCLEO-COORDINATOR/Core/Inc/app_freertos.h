@@ -54,34 +54,18 @@ extern "C" {
 /* USER CODE BEGIN EM */
 
 /* USER CODE END EM */
-extern osThreadId_t outputTaskHandle;
-extern osThreadId_t userTaskHandle;
-extern osThreadId_t inputTaskHandle;
-extern osThreadId_t diagnosticsTaskHandle;
 extern osThreadId_t radioTaskHandle;
-extern osMutexId_t ioPortSpiMutexHandle;
-extern osMutexId_t dinDataMutexHandle;
-extern osMessageQueueId_t outputQueueHandle;
-extern osMessageQueueId_t inputQueueHandle;
 extern osMessageQueueId_t radioInputQueueHandle;
 extern osMessageQueueId_t radioOutputQueueHandle;
-extern osEventFlagsId_t doutFaultEventHandle;
-extern osEventFlagsId_t dinEventHandle;
-extern osEventFlagsId_t dinFaultEventHandle;
 extern osEventFlagsId_t radioEventHandle;
-extern osEventFlagsId_t doutEventHandle;
-extern osEventFlagsId_t radioFaultEventHandle;
+extern osEventFlagsId_t radioFaultHandle;
 
 /* Exported function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
 
 /* USER CODE END FunctionPrototypes */
 
-void Output_Task(void *argument);
-void User_Task(void *argument);
-void Input_Task(void *argument);
-void Diagnostics_Task(void *argument);
-void Radio_Task(void *argument);
+void radioTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 

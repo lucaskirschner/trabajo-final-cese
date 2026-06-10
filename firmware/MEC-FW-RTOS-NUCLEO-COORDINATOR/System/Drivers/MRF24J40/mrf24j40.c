@@ -46,8 +46,7 @@
 #include "mrf24j40.h"
 #include "mrf24j40_port.h"
 #include "mrf24j40_reg.h"
-#include "stddef.h"
-//#include "stm32h5xx_hal.h" // necesaria solo si se usa HAL_GetUIDwX
+#include "stm32h5xx_hal.h"
 
 /* ============================ Local Macros =============================== */
 /**
@@ -480,6 +479,11 @@ mrf24j40_status_t mrf24j40_set_extended_address(void)
     return MRF24J40_OK;
 }
 
+void mrf24j40_set_interrupt_pending(void)
+{
+    mrf24j40_ctx.int_pending = true;
+}
+
 mrf24j40_status_t mrf24j40_update_interrupt_flags(void)
 {
     mrf24j40_status_t status;
@@ -488,6 +492,11 @@ mrf24j40_status_t mrf24j40_update_interrupt_flags(void)
     /* This minimal driver currently handles only RXIF and TXNIF, because only
      * RXIE and TXNIE are enabled in the base initialization.
      */
+
+    if (mrf24j40_ctx.int_pending == false)
+    {
+        return MRF24J40_E_STATE;
+    }
 
     status = mrf24j40_from_port_status(
         mrf24j40_port_read_short(INTSTAT, &intstat));
@@ -505,6 +514,8 @@ mrf24j40_status_t mrf24j40_update_interrupt_flags(void)
     {
         mrf24j40_ctx.tx_complete = true;
     }
+
+    mrf24j40_ctx.int_pending = false;
 
     return MRF24J40_OK;
 }
@@ -531,10 +542,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     /* Step 1: Disable host interrupts to avoid interruption while reading the
      * RXFIFO, as recommended by the datasheet.
      */
-
-    /* Global interrupt masking is not recommended in RTOS context.
-     * RXDECINV is used instead.
-     */
+    __disable_irq();
 
     /* Step 2: Set RXDECINV = 1 to prevent the receiver from accepting a new
      * packet from the air while the current RXFIFO contents are being read.
@@ -542,6 +550,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     status = mrf24j40_set_rxdecinv(true);
     if (status != MRF24J40_OK)
     {
+        __enable_irq();
         return status;
     }
 
@@ -557,6 +566,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     if (status != MRF24J40_OK)
     {
         (void)mrf24j40_set_rxdecinv(false);
+        __enable_irq();
         return status;
     }
 
@@ -565,6 +575,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     {
         (void)mrf24j40_set_rxdecinv(false);
         mrf24j40_ctx.rx_pending = false;
+        __enable_irq();
         return MRF24J40_E_FRAME;
     }
 
@@ -580,6 +591,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     {
         (void)mrf24j40_set_rxdecinv(false);
         mrf24j40_ctx.rx_pending = false;
+        __enable_irq();
         return MRF24J40_E_FRAME;
     }
 
@@ -598,6 +610,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
         if (status != MRF24J40_OK)
         {
             (void)mrf24j40_set_rxdecinv(false);
+            __enable_irq();
             return status;
         }
 
@@ -615,6 +628,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     if (status != MRF24J40_OK)
     {
         (void)mrf24j40_set_rxdecinv(false);
+        __enable_irq();
         return status;
     }
     addr++;
@@ -625,6 +639,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     if (status != MRF24J40_OK)
     {
         (void)mrf24j40_set_rxdecinv(false);
+        __enable_irq();
         return status;
     }
 
@@ -632,6 +647,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     status = mrf24j40_set_rxdecinv(false);
     if (status != MRF24J40_OK)
     {
+        __enable_irq();
         return status;
     }
 
@@ -639,6 +655,7 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet)
     mrf24j40_ctx.rx_pending = false;
 
     /* Re-enable host interrupts after the complete RXFIFO read sequence. */
+    __enable_irq();
 
     return MRF24J40_OK;
 }

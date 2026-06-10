@@ -110,6 +110,7 @@ typedef enum
  */
 typedef struct
 {
+    volatile bool int_pending;
     volatile bool rx_pending;
     volatile bool tx_complete;
 } mrf24j40_context_t;
@@ -302,19 +303,32 @@ mrf24j40_status_t mrf24j40_set_short_address(uint16_t short_address);
 mrf24j40_status_t mrf24j40_set_extended_address(void);
 
 /**
+ * @brief Notify the driver that the MRF24J40 INT pin asserted.
+ *
+ * @details
+ * This function is intended to be called from the external interrupt callback
+ * in application code when the MRF24J40 INT pin asserts.
+ *
+ * The specific interrupt source is resolved later by reading INTSTAT in
+ * mrf24j40_update_interrupt_flags().
+ */
+void mrf24j40_set_interrupt_pending(void);
+
+/**
  * @brief Decode the pending MRF24J40 interrupt source flags.
  *
  * @return
  * - MRF24J40_OK: Interrupt flags were decoded successfully.
+ * - MRF24J40_E_STATE: No pending interrupt had been previously latched.
  * - MRF24J40_E_HW: A hardware communication error occurred.
  * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out.
  * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
  *   port layer.
  *
  * @details
- * This function must be called from thread context after the application
- * detects an INT pin event. It reads INTSTAT and updates the internal
- * driver flags accordingly.
+ * If a pending INT pin event was previously latched by
+ * mrf24j40_set_interrupt_pending(), this function reads INTSTAT and updates
+ * the internal driver flags accordingly.
  *
  * Only RXIF and TXNIF are currently used by this minimal driver.
  *
@@ -342,10 +356,12 @@ mrf24j40_status_t mrf24j40_update_interrupt_flags(void);
  * This function follows the basic RXFIFO read sequence described in the
  * datasheet:
  * - check pending RX indication
+ * - disable host interrupts
  * - set RXDECINV = 1
  * - read RXFIFO length
  * - read frame bytes, LQI and RSSI
  * - clear RXDECINV = 0
+ * - enable host interrupts
  *
  * On successful completion, the internal RX pending flag is cleared.
  */
