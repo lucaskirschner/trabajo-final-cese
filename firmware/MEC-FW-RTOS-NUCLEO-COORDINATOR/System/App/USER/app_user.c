@@ -31,9 +31,9 @@
  * @details
  * This module implements a simple user application task.
  *
- * The task periodically toggles a complete digital-output image using the
- * app_dout public API and reads the latest digital-input image using the
- * app_din public API.
+ * The task periodically checks the radio RX queue using the app_radio public
+ * API. If one received byte is available, it prints the byte and then blocks
+ * again using osDelay().
  *
  * @ingroup app_user
  * @{
@@ -42,8 +42,7 @@
 /* ============================= Includes ================================== */
 
 #include "app_user.h"
-#include "app_dout.h"
-#include "app_din.h"
+#include "app_radio.h"
 #include "swo.h"
 
 #include "cmsis_os2.h"
@@ -54,78 +53,42 @@
 /* ============================ Local Macros =============================== */
 
 /**
- * @brief Initial digital output image.
- */
-#define APP_USER_OUTPUT_IMAGE_INITIAL      ((uint8_t)0x00u)
-
-/**
- * @brief Output image mask used to toggle all digital output channels.
- */
-#define APP_USER_OUTPUT_IMAGE_TOGGLE_MASK  ((uint8_t)0xFFu)
-
-/**
- * @brief Period, in milliseconds, between output image updates.
+ * @brief Period, in milliseconds, between radio RX queue checks.
  */
 #define APP_USER_OUTPUT_UPDATE_PERIOD_MS   ((uint32_t)1000u)
 
 /* ========================== Private Prototypes =========================== */
 
-static void app_user_print_inputs(uint8_t inputs);
+static void app_user_print_radio_byte(uint8_t data);
 
 /* ===================== Public Function Definitions ======================= */
 
 void app_user_task(void * argument)
 {
-    uint8_t outputs;
-    uint8_t inputs;
-    app_dout_status_t dout_status;
-    app_din_status_t din_status;
+    uint8_t data;
+    app_radio_status_t radio_status;
 
     (void)argument;
 
-    outputs = APP_USER_OUTPUT_IMAGE_INITIAL;
-
     for (;;)
     {
-        /* Toggle the complete output image used for this basic application
-         * test. Each bit represents one digital output channel.
+        /* Check the radio RX queue once. This API is non-blocking and returns
+         * immediately if no received byte is currently available.
          */
-        outputs ^= APP_USER_OUTPUT_IMAGE_TOGGLE_MASK;
+        radio_status = app_radio_receive(&data);
 
-        /* Enqueue the new output image using the digital-output application
-         * API. The output task is the only module that accesses the
-         * VNI8200XP-32 driver directly.
-         */
-        dout_status = app_dout_set_outputs(outputs);
-
-        if (dout_status != APP_DOUT_OK)
+        if (radio_status == APP_RADIO_OK)
         {
-            printf("[USER] app_dout_set_outputs() failed: %d\r\n",
-                   (int)dout_status);
+            app_user_print_radio_byte(data);
         }
-
-        /* Read the latest valid digital-input image using the digital-input
-         * application API. The input task updates this value periodically and
-         * protects it internally with a mutex.
-         */
-        din_status = app_din_read(&inputs);
-
-        if (din_status == APP_DIN_OK)
+        else if (radio_status == APP_RADIO_E_QUEUE_EMPTY)
         {
-            app_user_print_inputs(inputs);
+            /* No received data available during this period. */
         }
-        else if (din_status == APP_DIN_E_NOT_READY)
+        else if (radio_status != APP_RADIO_E_NULL)
         {
-            printf("[USER] DIN data not ready\r\n");
-        }
-        else if (din_status == APP_DIN_E_BUSY)
-        {
-            printf("[USER] DIN data busy\r\n");
-        }
-        else if (din_status != APP_DIN_E_NULL)
-        {
-            printf("[USER] app_din_read() failed: %d\r\n",
-                   (int)din_status);
+            printf("[USER] app_radio_receive() failed: %d\r\n",
+                   (int)radio_status);
         }
         else
         {
@@ -139,21 +102,13 @@ void app_user_task(void * argument)
 /* ===================== Private Function Definitions ====================== */
 
 /**
- * @brief Print the digital input image in binary format.
+ * @brief Print one received radio byte.
  *
- * @param inputs Digital input image.
+ * @param data Received radio byte.
  */
-static void app_user_print_inputs(uint8_t inputs)
+static void app_user_print_radio_byte(uint8_t data)
 {
-    printf("[DIN] Inputs: 0b%c%c%c%c%c%c%c%c\r\n",
-           ((inputs & (1u << 7u)) != 0u) ? '1' : '0',
-           ((inputs & (1u << 6u)) != 0u) ? '1' : '0',
-           ((inputs & (1u << 5u)) != 0u) ? '1' : '0',
-           ((inputs & (1u << 4u)) != 0u) ? '1' : '0',
-           ((inputs & (1u << 3u)) != 0u) ? '1' : '0',
-           ((inputs & (1u << 2u)) != 0u) ? '1' : '0',
-           ((inputs & (1u << 1u)) != 0u) ? '1' : '0',
-           ((inputs & (1u << 0u)) != 0u) ? '1' : '0');
+    printf("[RADIO] RX byte: 0x%02X\r\n", data);
 }
 
 /** @} */

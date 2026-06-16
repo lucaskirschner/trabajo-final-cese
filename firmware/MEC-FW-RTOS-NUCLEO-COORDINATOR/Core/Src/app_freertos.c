@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "app_radio.h"
+#include "app_user.h"
 
 /* USER CODE END Includes */
 
@@ -51,6 +52,13 @@ const osThreadAttr_t radioTask_attributes = {
   .name = "radioTask",
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 1024 * 4
+};
+/* Definitions for userTask */
+osThreadId_t userTaskHandle;
+const osThreadAttr_t userTask_attributes = {
+  .name = "userTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
 };
 /* Definitions for radioInputQueue */
 osMessageQueueId_t radioInputQueueHandle;
@@ -123,6 +131,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of radioTask */
   radioTaskHandle = osThreadNew(radioTask, NULL, &radioTask_attributes);
 
+  /* creation of userTask */
+  userTaskHandle = osThreadNew(userTask, NULL, &userTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
 
   /* USER CODE END RTOS_THREADS */
@@ -150,6 +161,20 @@ void radioTask(void *argument)
   /* USER CODE BEGIN radioTask */
   app_radio_task(argument);
   /* USER CODE END radioTask */
+}
+
+/* USER CODE BEGIN Header_userTask */
+/**
+* @brief Function implementing the userTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_userTask */
+void userTask(void *argument)
+{
+  /* USER CODE BEGIN userTask */
+  app_user_task(argument);
+  /* USER CODE END userTask */
 }
 
 /* Private application code --------------------------------------------------*/

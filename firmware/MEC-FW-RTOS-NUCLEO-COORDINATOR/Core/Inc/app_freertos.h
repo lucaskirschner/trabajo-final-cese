@@ -55,6 +55,7 @@ extern "C" {
 
 /* USER CODE END EM */
 extern osThreadId_t radioTaskHandle;
+extern osThreadId_t userTaskHandle;
 extern osMessageQueueId_t radioInputQueueHandle;
 extern osMessageQueueId_t radioOutputQueueHandle;
 extern osEventFlagsId_t radioEventHandle;
@@ -66,6 +67,7 @@ extern osEventFlagsId_t radioFaultHandle;
 /* USER CODE END FunctionPrototypes */
 
 void radioTask(void *argument);
+void userTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
