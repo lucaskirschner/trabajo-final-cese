@@ -52,6 +52,8 @@
 #include "app_dout.h"
 #include "vni8200xp32.h"
 
+#include "main.h"
+
 #include "cmsis_os2.h"
 
 #include <stdint.h>
@@ -63,7 +65,7 @@ static uint32_t app_dout_status_to_fault(vni8200xp32_status_t status);
 /* ======================= External RTOS Objects ============================ */
 
 extern osMessageQueueId_t outputQueueHandle;
-extern osEventFlagsId_t doutFaultEventHandle;
+extern osEventFlagsId_t doutFaultHandle;
 
 /* ===================== Public Function Definitions ======================= */
 
@@ -75,6 +77,8 @@ void app_dout_task(void * argument)
     uint32_t fault_flags;
 
     (void)argument;
+
+    HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_SET);
 
     for (;;)
     {
@@ -91,12 +95,12 @@ void app_dout_task(void * argument)
             {
                 fault_flags = app_dout_status_to_fault(vni_status);
 
-                (void)osEventFlagsSet(doutFaultEventHandle, fault_flags);
+                (void)osEventFlagsSet(doutFaultHandle, fault_flags);
             }
         }
         else
         {
-            (void)osEventFlagsSet(doutFaultEventHandle,
+            (void)osEventFlagsSet(doutFaultHandle,
                                   APP_DOUT_FAULT_OS_ERROR);
         }
     }
@@ -118,14 +122,14 @@ app_dout_status_t app_dout_set_outputs(uint8_t output_image)
     }
     else if (os_status == osErrorResource)
     {
-        (void)osEventFlagsSet(doutFaultEventHandle,
+        (void)osEventFlagsSet(doutFaultHandle,
                               APP_DOUT_FAULT_QUEUE_FULL);
 
         status = APP_DOUT_E_QUEUE_FULL;
     }
     else
     {
-        (void)osEventFlagsSet(doutFaultEventHandle,
+        (void)osEventFlagsSet(doutFaultHandle,
                               APP_DOUT_FAULT_OS_ERROR);
 
         status = APP_DOUT_E_OS;

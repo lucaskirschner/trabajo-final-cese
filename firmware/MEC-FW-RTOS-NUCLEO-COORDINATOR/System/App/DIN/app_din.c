@@ -65,7 +65,7 @@ static uint32_t app_din_status_to_fault(sclt38bt8_status_t status);
 /* ======================= External RTOS Objects ============================ */
 
 extern osMutexId_t dinDataMutexHandle;
-extern osEventFlagsId_t dinFaultEventHandle;
+extern osEventFlagsId_t dinFaultHandle;
 
 /* ======================= Local Static Data ================================ */
 
@@ -96,7 +96,7 @@ void app_din_task(void * argument)
 
             if (fault_flags != 0u)
             {
-                (void)osEventFlagsSet(dinFaultEventHandle, fault_flags);
+                (void)osEventFlagsSet(dinFaultHandle, fault_flags);
             }
         }
 
@@ -138,7 +138,7 @@ app_din_status_t app_din_read(uint8_t * p_input_image)
         }
         else
         {
-            (void)osEventFlagsSet(dinFaultEventHandle,
+            (void)osEventFlagsSet(dinFaultHandle,
                                   APP_DIN_FAULT_OS_ERROR);
 
             status = APP_DIN_E_OS;
@@ -176,7 +176,7 @@ static void app_din_update_last_image(uint8_t input_image)
     }
     else
     {
-        (void)osEventFlagsSet(dinFaultEventHandle,
+        (void)osEventFlagsSet(dinFaultHandle,
                               APP_DIN_FAULT_OS_ERROR);
     }
 }

@@ -24,6 +24,8 @@
 /* USER CODE BEGIN Includes */
 #include "app_radio.h"
 #include "app_user.h"
+#include "app_din.h"
+#include "app_dout.h"
 
 /* USER CODE END Includes */
 
@@ -60,6 +62,30 @@ const osThreadAttr_t userTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
+/* Definitions for dinTask */
+osThreadId_t dinTaskHandle;
+const osThreadAttr_t dinTask_attributes = {
+  .name = "dinTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
+/* Definitions for doutTask */
+osThreadId_t doutTaskHandle;
+const osThreadAttr_t doutTask_attributes = {
+  .name = "doutTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
+/* Definitions for ioPortSpiMutex */
+osMutexId_t ioPortSpiMutexHandle;
+const osMutexAttr_t ioPortSpiMutex_attributes = {
+  .name = "ioPortSpiMutex"
+};
+/* Definitions for dinDataMutex */
+osMutexId_t dinDataMutexHandle;
+const osMutexAttr_t dinDataMutex_attributes = {
+  .name = "dinDataMutex"
+};
 /* Definitions for radioInputQueue */
 osMessageQueueId_t radioInputQueueHandle;
 const osMessageQueueAttr_t radioInputQueue_attributes = {
@@ -70,6 +96,11 @@ osMessageQueueId_t radioOutputQueueHandle;
 const osMessageQueueAttr_t radioOutputQueue_attributes = {
   .name = "radioOutputQueue"
 };
+/* Definitions for outputQueue */
+osMessageQueueId_t outputQueueHandle;
+const osMessageQueueAttr_t outputQueue_attributes = {
+  .name = "outputQueue"
+};
 /* Definitions for radioEvent */
 osEventFlagsId_t radioEventHandle;
 const osEventFlagsAttr_t radioEvent_attributes = {
@@ -79,6 +110,16 @@ const osEventFlagsAttr_t radioEvent_attributes = {
 osEventFlagsId_t radioFaultHandle;
 const osEventFlagsAttr_t radioFault_attributes = {
   .name = "radioFault"
+};
+/* Definitions for dinFault */
+osEventFlagsId_t dinFaultHandle;
+const osEventFlagsAttr_t dinFault_attributes = {
+  .name = "dinFault"
+};
+/* Definitions for doutFault */
+osEventFlagsId_t doutFaultHandle;
+const osEventFlagsAttr_t doutFault_attributes = {
+  .name = "doutFault"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -108,6 +149,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* creation of ioPortSpiMutex */
+  ioPortSpiMutexHandle = osMutexNew(&ioPortSpiMutex_attributes);
+
+  /* creation of dinDataMutex */
+  dinDataMutexHandle = osMutexNew(&dinDataMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
 
@@ -124,6 +170,8 @@ void MX_FREERTOS_Init(void) {
   radioInputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &radioInputQueue_attributes);
   /* creation of radioOutputQueue */
   radioOutputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &radioOutputQueue_attributes);
+  /* creation of outputQueue */
+  outputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &outputQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
 
@@ -134,6 +182,12 @@ void MX_FREERTOS_Init(void) {
   /* creation of userTask */
   userTaskHandle = osThreadNew(userTask, NULL, &userTask_attributes);
 
+  /* creation of dinTask */
+  dinTaskHandle = osThreadNew(dinTask, NULL, &dinTask_attributes);
+
+  /* creation of doutTask */
+  doutTaskHandle = osThreadNew(doutTask, NULL, &doutTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
 
   /* USER CODE END RTOS_THREADS */
@@ -143,6 +197,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of radioFault */
   radioFaultHandle = osEventFlagsNew(&radioFault_attributes);
+
+  /* creation of dinFault */
+  dinFaultHandle = osEventFlagsNew(&dinFault_attributes);
+
+  /* creation of doutFault */
+  doutFaultHandle = osEventFlagsNew(&doutFault_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
 
@@ -175,6 +235,35 @@ void userTask(void *argument)
   /* USER CODE BEGIN userTask */
   app_user_task(argument);
   /* USER CODE END userTask */
+}
+
+/* USER CODE BEGIN Header_dinTask */
+/**
+* @brief Function implementing the dinTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_dinTask */
+void dinTask(void *argument)
+{
+  /* USER CODE BEGIN dinTask */
+  app_din_task(argument);
+  /* USER CODE END dinTask */
+}
+
+/* USER CODE BEGIN Header_doutTask */
+/**
+* @brief Function implementing the doutTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_doutTask */
+void doutTask(void *argument)
+{
+  /* USER CODE BEGIN doutTask */
+  /* Infinite loop */
+  app_dout_task(argument);
+  /* USER CODE END doutTask */
 }
 
 /* Private application code --------------------------------------------------*/
