@@ -53,9 +53,9 @@
 
 /* ======================= External RTOS Objects ============================ */
 
-extern osEventFlagsId_t doutFaultEventHandle;
-extern osEventFlagsId_t dinFaultEventHandle;
-extern osEventFlagsId_t radioFaultEventHandle;
+extern osEventFlagsId_t doutFaultHandle;
+extern osEventFlagsId_t dinFaultHandle;
+extern osEventFlagsId_t radioFaultHandle;
 
 /* ========================== Private Prototypes =========================== */
 
@@ -73,7 +73,7 @@ void app_diagnostics_task(void * argument)
 
     for (;;)
     {
-        flags = osEventFlagsWait(doutFaultEventHandle,
+        flags = osEventFlagsWait(doutFaultHandle,
                                  APP_DOUT_FAULT_ERROR_MASK,
                                  osFlagsWaitAny,
                                  100U);
@@ -83,7 +83,7 @@ void app_diagnostics_task(void * argument)
             app_diagnostics_print_dout_faults(flags);
         }
 
-        flags = osEventFlagsWait(dinFaultEventHandle,
+        flags = osEventFlagsWait(dinFaultHandle,
                                  APP_DIN_FAULT_ERROR_MASK,
                                  osFlagsWaitAny,
                                  100U);
@@ -93,7 +93,7 @@ void app_diagnostics_task(void * argument)
             app_diagnostics_print_din_faults(flags);
         }
 
-        flags = osEventFlagsWait(radioFaultEventHandle,
+        flags = osEventFlagsWait(radioFaultHandle,
                                  APP_RADIO_FAULT_ERROR_MASK,
                                  osFlagsWaitAny,
                                  100U);

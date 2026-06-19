@@ -26,6 +26,7 @@
 #include "app_user.h"
 #include "app_din.h"
 #include "app_dout.h"
+#include "app_diagnostics.h"
 
 /* USER CODE END Includes */
 
@@ -76,6 +77,13 @@ const osThreadAttr_t doutTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
+/* Definitions for diagnosticsTask */
+osThreadId_t diagnosticsTaskHandle;
+const osThreadAttr_t diagnosticsTask_attributes = {
+  .name = "diagnosticsTask",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
 /* Definitions for ioPortSpiMutex */
 osMutexId_t ioPortSpiMutexHandle;
 const osMutexAttr_t ioPortSpiMutex_attributes = {
@@ -96,10 +104,10 @@ osMessageQueueId_t radioOutputQueueHandle;
 const osMessageQueueAttr_t radioOutputQueue_attributes = {
   .name = "radioOutputQueue"
 };
-/* Definitions for outputQueue */
-osMessageQueueId_t outputQueueHandle;
-const osMessageQueueAttr_t outputQueue_attributes = {
-  .name = "outputQueue"
+/* Definitions for outOutputQueue */
+osMessageQueueId_t outOutputQueueHandle;
+const osMessageQueueAttr_t outOutputQueue_attributes = {
+  .name = "outOutputQueue"
 };
 /* Definitions for radioEvent */
 osEventFlagsId_t radioEventHandle;
@@ -170,8 +178,8 @@ void MX_FREERTOS_Init(void) {
   radioInputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &radioInputQueue_attributes);
   /* creation of radioOutputQueue */
   radioOutputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &radioOutputQueue_attributes);
-  /* creation of outputQueue */
-  outputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &outputQueue_attributes);
+  /* creation of outOutputQueue */
+  outOutputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &outOutputQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
 
@@ -187,6 +195,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of doutTask */
   doutTaskHandle = osThreadNew(doutTask, NULL, &doutTask_attributes);
+
+  /* creation of diagnosticsTask */
+  diagnosticsTaskHandle = osThreadNew(diagnosticsTask, NULL, &diagnosticsTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
 
@@ -264,6 +275,21 @@ void doutTask(void *argument)
   /* Infinite loop */
   app_dout_task(argument);
   /* USER CODE END doutTask */
+}
+
+/* USER CODE BEGIN Header_diagnosticsTask */
+/**
+* @brief Function implementing the diagnosticsTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_diagnosticsTask */
+void diagnosticsTask(void *argument)
+{
+  /* USER CODE BEGIN diagnosticsTask */
+  /* Infinite loop */
+  app_diagnostics_task(argument);
+  /* USER CODE END diagnosticsTask */
 }
 
 /* Private application code --------------------------------------------------*/

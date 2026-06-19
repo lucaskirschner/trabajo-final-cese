@@ -64,7 +64,7 @@ static uint32_t app_dout_status_to_fault(vni8200xp32_status_t status);
 
 /* ======================= External RTOS Objects ============================ */
 
-extern osMessageQueueId_t outputQueueHandle;
+extern osMessageQueueId_t outOutputQueueHandle;
 extern osEventFlagsId_t doutFaultHandle;
 
 /* ===================== Public Function Definitions ======================= */
@@ -82,7 +82,7 @@ void app_dout_task(void * argument)
 
     for (;;)
     {
-        queue_status = osMessageQueueGet(outputQueueHandle,
+        queue_status = osMessageQueueGet(outOutputQueueHandle,
                                          &output_image,
                                          NULL,
                                          osWaitForever);
@@ -111,7 +111,7 @@ app_dout_status_t app_dout_set_outputs(uint8_t output_image)
     osStatus_t os_status;
     app_dout_status_t status;
 
-    os_status = osMessageQueuePut(outputQueueHandle,
+    os_status = osMessageQueuePut(outOutputQueueHandle,
                                   &output_image,
                                   0u,
                                   0u);

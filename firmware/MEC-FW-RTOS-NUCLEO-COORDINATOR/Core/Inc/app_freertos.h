@@ -58,11 +58,12 @@ extern osThreadId_t radioTaskHandle;
 extern osThreadId_t userTaskHandle;
 extern osThreadId_t dinTaskHandle;
 extern osThreadId_t doutTaskHandle;
+extern osThreadId_t diagnosticsTaskHandle;
 extern osMutexId_t ioPortSpiMutexHandle;
 extern osMutexId_t dinDataMutexHandle;
 extern osMessageQueueId_t radioInputQueueHandle;
 extern osMessageQueueId_t radioOutputQueueHandle;
-extern osMessageQueueId_t outputQueueHandle;
+extern osMessageQueueId_t outOutputQueueHandle;
 extern osEventFlagsId_t radioEventHandle;
 extern osEventFlagsId_t radioFaultHandle;
 extern osEventFlagsId_t dinFaultHandle;
@@ -77,6 +78,7 @@ void radioTask(void *argument);
 void userTask(void *argument);
 void dinTask(void *argument);
 void doutTask(void *argument);
+void diagnosticsTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
