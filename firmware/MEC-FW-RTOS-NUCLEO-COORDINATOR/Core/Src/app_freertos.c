@@ -132,7 +132,7 @@ const osEventFlagsAttr_t doutFault_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+void Error_Handler(void);
 /* USER CODE END FunctionPrototypes */
 
 /* USER CODE BEGIN 1 */
@@ -164,7 +164,11 @@ void MX_FREERTOS_Init(void) {
   dinDataMutexHandle = osMutexNew(&dinDataMutex_attributes);
 
   /* USER CODE BEGIN RTOS_MUTEX */
-
+  if ((ioPortSpiMutexHandle == NULL) ||
+      (dinDataMutexHandle == NULL))
+  {
+    Error_Handler();
+  }
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
@@ -182,7 +186,12 @@ void MX_FREERTOS_Init(void) {
   outOutputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &outOutputQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
-
+  if ((radioInputQueueHandle == NULL) ||
+      (radioOutputQueueHandle == NULL) ||
+      (outOutputQueueHandle == NULL))
+  {
+    Error_Handler();
+  }
   /* USER CODE END RTOS_QUEUES */
   /* creation of radioTask */
   radioTaskHandle = osThreadNew(radioTask, NULL, &radioTask_attributes);
@@ -200,7 +209,14 @@ void MX_FREERTOS_Init(void) {
   diagnosticsTaskHandle = osThreadNew(diagnosticsTask, NULL, &diagnosticsTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
-
+  if ((radioTaskHandle == NULL) ||
+      (userTaskHandle == NULL) ||
+      (dinTaskHandle == NULL) ||
+      (doutTaskHandle == NULL) ||
+      (diagnosticsTaskHandle == NULL))
+  {
+    Error_Handler();
+  }
   /* USER CODE END RTOS_THREADS */
 
   /* creation of radioEvent */
@@ -216,13 +232,24 @@ void MX_FREERTOS_Init(void) {
   doutFaultHandle = osEventFlagsNew(&doutFault_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
-
+  if ((radioEventHandle == NULL) ||
+      (radioFaultHandle == NULL) ||
+      (dinFaultHandle == NULL) ||
+      (doutFaultHandle == NULL))
+  {
+    Error_Handler();
+  }
   /* USER CODE END RTOS_EVENTS */
 
 }
 /* USER CODE BEGIN Header_radioTask */
 /**
 * @brief Function implementing the radioTask thread.
+*
+* This task executes the radio application layer. It handles the MRF24J40
+* service routine, including pending radio events, received data and queued
+* transmissions.
+*
 * @param argument: Not used
 * @retval None
 */
@@ -237,6 +264,10 @@ void radioTask(void *argument)
 /* USER CODE BEGIN Header_userTask */
 /**
 * @brief Function implementing the userTask thread.
+*
+* This task executes the user application layer. It contains the application
+* logic that uses the available input, output and communication services.
+*
 * @param argument: Not used
 * @retval None
 */
@@ -251,6 +282,10 @@ void userTask(void *argument)
 /* USER CODE BEGIN Header_dinTask */
 /**
 * @brief Function implementing the dinTask thread.
+*
+* This task executes the digital input application layer. It periodically
+* updates the input state and provides the latest input data to the system.
+*
 * @param argument: Not used
 * @retval None
 */
@@ -265,6 +300,10 @@ void dinTask(void *argument)
 /* USER CODE BEGIN Header_doutTask */
 /**
 * @brief Function implementing the doutTask thread.
+*
+* This task executes the digital output application layer. It processes pending
+* output commands and updates the output driver state.
+*
 * @param argument: Not used
 * @retval None
 */
@@ -280,6 +319,11 @@ void doutTask(void *argument)
 /* USER CODE BEGIN Header_diagnosticsTask */
 /**
 * @brief Function implementing the diagnosticsTask thread.
+*
+* This task executes the diagnostics application layer. It monitors system
+* fault flags and reports diagnostic information for the main application
+* modules.
+*
 * @param argument: Not used
 * @retval None
 */
