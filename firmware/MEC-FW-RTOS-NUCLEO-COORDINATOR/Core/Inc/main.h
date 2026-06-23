@@ -66,6 +66,10 @@ void Error_Handler(void);
 #define SPI1_CS_VNI_GPIO_Port GPIOD
 #define SPI1_CS_CLT_Pin GPIO_PIN_15
 #define SPI1_CS_CLT_GPIO_Port GPIOD
+#define RS485_RE_Pin GPIO_PIN_9
+#define RS485_RE_GPIO_Port GPIOA
+#define RS485_DE_Pin GPIO_PIN_10
+#define RS485_DE_GPIO_Port GPIOA
 #define SPI3_CS_Pin GPIO_PIN_15
 #define SPI3_CS_GPIO_Port GPIOA
 #define WAKE_Pin GPIO_PIN_2
