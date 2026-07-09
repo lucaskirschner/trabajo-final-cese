@@ -65,17 +65,23 @@ El desarrollo del firmware del sistema se realizó utilizando distintas capas de
 
 \subsection{FreeRTOS}
 
-FreeRTOS es un sistema operativo de tiempo real orientado a sistemas embebidos \cite{freertos}. El sistema proporciona mecanismos de planificación multitarea basados en prioridades, sincronización mediante semáforos y mutex, comunicación entre tareas y administración de temporizadores de software.
+FreeRTOS es un sistema operativo de tiempo real ampliamente utilizado en sistemas embebidos \cite{freertos}. El sistema proporciona mecanismos de planificación multitarea basados en prioridades, sincronización mediante semáforos y mutex, comunicación entre tareas y administración de temporizadores de software.
 
-La utilización de un RTOS permitió implementar múltiples tareas concurrentes asociadas a adquisición de datos, comunicación inalámbrica y procesamiento de protocolos Ethernet. FreeRTOS también facilitó la modularización del firmware y la separación funcional entre los distintos subsistemas de la aplicación.
+En el sistema desarrollado, FreeRTOS actuó como núcleo del sistema operativo, mientras que la aplicación utilizó la interfaz estandarizada CMSIS-RTOS2 (\textit{Cortex Microcontroller Software Interface Standard for Real-Time Operating Systems}) para acceder a sus servicios.
 
-\subsection{HAL y BSP}
+\subsection{CMSIS-RTOS2}
 
-Para el acceso y configuración de los periféricos del microcontrolador se utilizaron las bibliotecas HAL (\textit{Hardware Abstraction Layer}, Capa de Abstracción de Hardware) y BSP (\textit{Board Support Package}, Paquete de Soporte de Placa) provistas por STMicroelectronics \cite{hal,bsp}.
+El desarrollo de la aplicación en tiempo real se realizó mediante la interfaz CMSIS-RTOS2, especificada por Arm \cite{cmsisrtos2}. Esta interfaz define una API estandarizada para sistemas operativos de tiempo real, independiente del núcleo RTOS utilizado.
 
-La capa HAL proporciona funciones de alto nivel para el manejo de periféricos internos del microcontrolador, incluyendo interfaces SPI, UART, Ethernet y temporizadores. Esta capa simplifica el desarrollo del firmware mediante una interfaz uniforme e independiente de registros específicos del hardware.
+CMSIS-RTOS2 proporciona mecanismos para la creación y administración de tareas, sincronización mediante semáforos y mutex, comunicación entre tareas, temporizadores y control del tiempo de ejecución. Al definir una interfaz común, permite desacoplar la aplicación del sistema operativo subyacente y facilita la reutilización del código sobre diferentes implementaciones compatibles, como FreeRTOS, CMSIS-RTX y otros sistemas operativos de tiempo real.
 
-Por otro lado, la capa BSP incorpora controladores y configuraciones específicas para placas de desarrollo y módulos de evaluación utilizados durante el proyecto, facilitando la inicialización y utilización de periféricos externos integrados en dichas plataformas.
+En el sistema desarrollado, CMSIS-RTOS2 se utilizó como capa de abstracción entre la aplicación y FreeRTOS. Esta arquitectura permitió desarrollar el firmware utilizando una API estandarizada, reduciendo la dependencia de funciones específicas del RTOS y favoreciendo la portabilidad y el mantenimiento del software.
+
+\subsection{HAL}
+
+Para el acceso y configuración de los periféricos del microcontrolador se utilizaron las bibliotecas HAL (\textit{Hardware Abstraction Layer}, Capa de Abstracción de Hardware) provistas por STMicroelectronics \cite{hal}.
+
+La capa HAL proporciona funciones de alto nivel para el manejo de los periféricos internos del microcontrolador, incluyendo interfaces SPI, UART, Ethernet y temporizadores. Esta capa simplifica el desarrollo del firmware mediante una interfaz uniforme e independiente de los registros específicos del hardware, favoreciendo la portabilidad y el mantenimiento del software.
 
 \subsection{lwIP}
 
