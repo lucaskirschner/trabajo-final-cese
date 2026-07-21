@@ -9,17 +9,17 @@ En este capítulo se describen las principales plataformas de hardware, componen
 
 Tanto la estación central como las estaciones remotas del sistema utilizan el microcontrolador STM32H563RI de STMicroelectronics, perteneciente a la familia STM32H5 \cite{STM32H563,STMicroelectronics,STM32H5}. Esta decisión permitió uniformar la arquitectura de hardware y simplificar el desarrollo y mantenimiento del firmware. Además, facilitó la reutilización de controladores, configuraciones de periféricos y capas de abstracción de hardware entre ambos tipos de nodos.
 
-El STM32H563RI se basa en una arquitectura ARM Cortex-M33 de 32 bits \cite{CortexM33}, orientada a sistemas embebidos de alto rendimiento y plataformas conectadas. El núcleo incorpora una unidad de punto flotante FPU (\textit{Floating Point Unit}, Unidad de Punto Flotante), extensiones DSP (\textit{Digital Signal Processing}, Procesamiento Digital de Señales) y mecanismos de seguridad basados en TrustZone \cite{STM32H5,STM32H563_RefManual}, adecuados para aplicaciones industriales e IoT.
+El STM32H563RI se basa en una arquitectura ARM Cortex-M33 de 32 bits \cite{CortexM33}, orientada a sistemas embebidos de alto rendimiento y plataformas conectadas. El núcleo incorpora una unidad de punto flotante FPU (\textit{Floating Point Unit}, unidad de punto flotante), extensiones DSP (\textit{Digital Signal Processing}, procesamiento digital de señales) y mecanismos de seguridad basados en TrustZone \cite{STM32H5,STM32H563_RefManual}, adecuados para aplicaciones industriales e IoT.
 
-El microcontrolador dispone de memoria Flash integrada y memoria SRAM (\textit{Static Random Access Memory}, Memoria Estática de Acceso Aleatorio) interna, además de una amplia variedad de periféricos de comunicación y control \cite{STM32H563}. Entre los periféricos utilizados durante el desarrollo se encuentran interfaces SPI (\textit{Serial Peripheral Interface}, Interfaz Periférica Serie), UART (\textit{Universal Asynchronous Receiver-Transmitter}, Transmisor-Receptor Asíncrono Universal) y Ethernet MAC (\textit{Media Access Control}, Control de Acceso al Medio).
+El microcontrolador dispone de memoria Flash integrada y memoria SRAM (\textit{Static Random Access Memory}, memoria estática de acceso aleatorio) interna, además de una amplia variedad de periféricos de comunicación y control \cite{STM32H563}. Entre los periféricos utilizados durante el desarrollo se encuentran interfaces SPI (\textit{Serial Peripheral Interface}, interfaz periférica serie), UART (\textit{Universal Asynchronous Receiver-Transmitter}, transmisor-receptor asíncrono universal) y Ethernet MAC (\textit{Media Access Control}, control de acceso al medio).
 
-La selección de este microcontrolador también se fundamentó en la disponibilidad de herramientas de desarrollo y middleware provistos por STMicroelectronics, incluyendo STM32CubeIDE \cite{stm32cubeide}, bibliotecas HAL (\textit{Hardware Abstraction Layer}, Capa de Abstracción de Hardware) \cite{hal} y soporte para sistemas operativos de tiempo real como FreeRTOS (\textit{Free Real-Time Operating System}, Sistema Operativo de Tiempo Real Libre) \cite{freertos}. Estas herramientas simplificaron significativamente el desarrollo, depuración y mantenimiento del firmware del sistema.
+La selección de este microcontrolador también se fundamentó en la disponibilidad de herramientas de desarrollo y middleware provistos por STMicroelectronics, incluyendo STM32CubeIDE \cite{stm32cubeide}, bibliotecas HAL (\textit{Hardware Abstraction Layer}, capa de abstracción de hardware) \cite{hal} y soporte para sistemas operativos de tiempo real como FreeRTOS \cite{freertos}. Estas herramientas simplificaron significativamente el desarrollo, depuración y mantenimiento del firmware del sistema.
 
 %----------------------------------------------------------------------------------------
 
 \section{Componentes y módulos externos}
 
-Complementariamente a la plataforma de procesamiento basada en el STM32H563RI, el sistema incorpora distintos circuitos integrados y módulos externos orientados a la adquisición de señales industriales, manejo de salidas, comunicación cableada e inalámbrica y validación del firmware durante las etapas de desarrollo. A continuación, se describen los componentes más relevantes utilizados en el trabajo.
+Complementariamente a la plataforma de procesamiento basada en el STM32H\-563RI, el sistema incorpora distintos circuitos integrados y módulos externos orientados a la adquisición de señales industriales, manejo de salidas, comunicación cableada e inalámbrica y validación del firmware durante las etapas de desarrollo. A continuación, se describen los componentes más relevantes utilizados en el trabajo.
 
 \subsection{SCLT3-8BT8}
 
@@ -29,27 +29,27 @@ El circuito incorpora protección contra sobretensiones y compatibilidad con est
 
 \subsection{VNI8200XP-32}
 
-El VNI8200XP-32 de STMicroelectronics es un controlador de salidas digitales industriales de ocho canales basado en transistores MOSFET (\textit{Metal-Oxide-Semiconductor Field-Effect Transistor}, Transistor de Efecto de Campo Metal-Óxido-Semiconductor) de tipo \textit{high-side} \cite{vni8200xp32}. El dispositivo permite accionar cargas industriales de 24 V mediante una interfaz SPI o paralelo configurable.
+El VNI8200XP-32 de STMicroelectronics es un controlador de salidas digitales industriales de ocho canales basado en transistores MOSFET (\textit{Metal-Oxide-Semicon\-ductor Field-Effect Transistor}, transistor de efecto de campo metal-óxido-semicon\-ductor) de tipo \textit{high-side} \cite{vni8200xp32}. El dispositivo permite accionar cargas industriales de 24 V mediante una interfaz SPI o paralelo configurable.
 
 El componente incorpora funciones de protección y diagnóstico, incluyendo protección térmica, limitación de corriente, detección de sobrecorriente, monitoreo de alimentación y señalización de fallas. También dispone de mecanismos específicos frente a condiciones de cortocircuito y sobretemperatura, características relevantes en aplicaciones industriales.
 
 \subsection{SN65HVD82}
 
-El SN65HVD82 de Texas Instruments es un transceptor RS-485 (\textit{Recommended Standard 485}, Estándar de Comunicación Diferencial Serie) diseñado para comunicaciones industriales robustas \cite{sn65hvd82}. El dispositivo opera con alimentación de 5 V y proporciona transmisión diferencial compatible con buses multipunto de larga distancia.
+El SN65HVD82 de Texas Instruments es un transceptor RS-485 (\textit{Recommended Standard 485}) diseñado para comunicaciones industriales robustas \cite{sn65hvd82}. El dispositivo opera con alimentación de 5 V y proporciona transmisión diferencial compatible con buses multipunto de larga distancia.
 
-El componente incorpora protección ESD (\textit{Electrostatic Discharge}, Descarga Electrostática) conforme a normas IEC orientadas a aplicaciones industriales y permite operación en entornos con elevado nivel de ruido electromagnético. Además, soporta altas velocidades de transmisión y presenta bajo consumo energético.
+El componente incorpora protección ESD (\textit{Electrostatic Discharge}, descarga electrostática) conforme a normas IEC orientadas a aplicaciones industriales y permite operación en entornos con elevado nivel de ruido electromagnético. Además, soporta altas velocidades de transmisión y presenta bajo consumo energético.
 
 \subsection{MRF24J40}
 
-El MRF24J40 de Microchip es un transceptor inalámbrico compatible con el estándar IEEE 802.15.4 \cite{mrf24j40}. El dispositivo opera en la banda ISM (\textit{Industrial, Scientific and Medical}, Industrial, Científica y Médica) de 2.4 GHz y está orientado a aplicaciones de redes inalámbricas de bajo consumo.
+El MRF24J40 de Microchip es un transceptor inalámbrico compatible con el estándar IEEE 802.15.4 \cite{mrf24j40}. El dispositivo opera en la banda ISM (\textit{Industrial, Scientific and Medical}, industrial, científica y médica) de 2.4 GHz y está orientado a aplicaciones de redes inalámbricas de bajo consumo.
 
-El componente incorpora las capas PHY y MAC, además de mecanismos de cifrado AES-128 (\textit{Advanced Encryption Standard}, Estándar de Cifrado Avanzado). La comunicación con el microcontrolador se realiza mediante interfaz SPI.
+El componente incorpora las capas PHY y MAC, además de mecanismos de cifrado AES-128 (\textit{Advanced Encryption Standard}, estándar de cifrado avanzado). La comunicación con el microcontrolador se realiza mediante interfaz SPI.
 
 \subsection{LAN8742A}
 
-El LAN8742A de Microchip es un transceptor Ethernet PHY compatible con Ethernet 10BASE-T y 100BASE-TX \cite{lan8742a}. El dispositivo se comunica con el microcontrolador mediante interfaz RMII (\textit{Reduced Media Independent Interface}, Interfaz Independiente del Medio Reducida), lo que permite implementar conectividad Ethernet de bajo número de pines.
+El LAN8742A de Microchip es un transceptor Ethernet PHY compatible con Ethernet 10BASE-T y 100BASE-TX \cite{lan8742a}. El dispositivo se comunica con el microcontrolador mediante interfaz RMII (\textit{Reduced Media Independent Interface}, interfaz independiente del medio reducida), lo que permite implementar conectividad Ethernet de bajo número de pines.
 
-El componente incorpora soporte para auto-negociación, detección automática de polaridad y tecnología HP Auto-MDIX (\textit{Automatic Medium-Dependent Interface Crossover}, Cruce Automático de Interfaz Dependiente del Medio), característica que permite utilizar cables directos o cruzados. Además, dispone de mecanismos de administración de energía y soporte para Wake-on-LAN (\textit{Wake on Local Area Network}, Activación mediante Red Local).
+El componente incorpora soporte para auto-negociación, detección automática de polaridad y tecnología HP Auto-MDIX (\textit{Automatic Medium-Dependent Interface Crossover}, cruce automático de interfaz dependiente del medio), característica que permite utilizar cables directos o cruzados.
 
 \subsection{Kits de desarrollo y evaluación}
 
@@ -67,7 +67,7 @@ El desarrollo del firmware del sistema se realizó utilizando distintas capas de
 
 FreeRTOS es un sistema operativo de tiempo real ampliamente utilizado en sistemas embebidos \cite{freertos}. El sistema proporciona mecanismos de planificación multitarea basados en prioridades, sincronización mediante semáforos y mutex, comunicación entre tareas y administración de temporizadores de software.
 
-En el sistema desarrollado, FreeRTOS actuó como núcleo del sistema operativo, mientras que la aplicación utilizó la interfaz estandarizada CMSIS-RTOS2 (\textit{Cortex Microcontroller Software Interface Standard for Real-Time Operating Systems}) para acceder a sus servicios.
+En el sistema desarrollado, FreeRTOS actuó como núcleo del sistema operativo, mientras que la aplicación utilizó la interfaz estandarizada CMSIS-RTOS2 (\textit{Cortex Microcontroller Software Interface Standard for Real-Time Operating Systems}, estándar de interfaz de software para microcontroladores Cortex para sistemas operativos de tiempo real) para acceder a sus servicios.
 
 \subsection{CMSIS-RTOS2}
 
@@ -79,15 +79,15 @@ En el sistema desarrollado, CMSIS-RTOS2 se utilizó como capa de abstracción en
 
 \subsection{HAL}
 
-Para el acceso y configuración de los periféricos del microcontrolador se utilizaron las bibliotecas HAL (\textit{Hardware Abstraction Layer}, Capa de Abstracción de Hardware) provistas por STMicroelectronics \cite{hal}.
+Para el acceso y configuración de los periféricos del microcontrolador se utilizaron las bibliotecas HAL provistas por STMicroelectronics \cite{hal}.
 
 La capa HAL proporciona funciones de alto nivel para el manejo de los periféricos internos del microcontrolador, incluyendo interfaces SPI, UART, Ethernet y temporizadores. Esta capa simplifica el desarrollo del firmware mediante una interfaz uniforme e independiente de los registros específicos del hardware, favoreciendo la portabilidad y el mantenimiento del software.
 
 \subsection{lwIP}
 
-Para la implementación de conectividad Ethernet y protocolos TCP/IP (\textit{Transmission Control Protocol/Internet Protocol}, Protocolo de Control de Transmisión/Protocolo de Internet) se utilizó el \textit{stack} lwIP (\textit{Lightweight IP}) \cite{tcpip,lwip}.
+Para la implementación de conectividad Ethernet y protocolos TCP/IP (\textit{Transmission Control Protocol/Internet Protocol}, protocolo de control de transmisión/protocolo de internet) se utilizó el \textit{stack} lwIP (\textit{Lightweight IP}) \cite{tcpip,lwip}.
 
-lwIP es una implementación liviana del protocolo TCP/IP \cite{tcpip} orientada a sistemas embebidos con recursos limitados. El \textit{stack} incorpora soporte para protocolos IPv4, TCP, UDP (\textit{User Datagram Protocol}, Protocolo de Datagrama de Usuario), ICMP (\textit{Internet Control Message Protocol}, Protocolo de Mensajes de Control de Internet), DHCP (\textit{Dynamic Host Configuration Protocol}, Protocolo de Configuración Dinámica de Host) y ARP (\textit{Address Resolution Protocol}, Protocolo de Resolución de Direcciones).
+lwIP es una implementación liviana del protocolo TCP/IP \cite{tcpip} orientada a sistemas embebidos con recursos limitados. El \textit{stack} incorpora soporte para protocolos IPv4, TCP, UDP (\textit{User Datagram Protocol}, protocolo de datagrama de usuario), ICMP (\textit{Internet Control Message Protocol}, protocolo de mensajes de control de internet), DHCP (\textit{Dynamic Host Configuration Protocol}, protocolo de configuración dinámica de host) y ARP (\textit{Address Resolution Protocol}, protocolo de resolución de direcciones).
 
 En el sistema desarrollado, lwIP fue integrado junto con FreeRTOS y el periférico Ethernet del STM32H563RI. Esta integración permitió implementar comunicación Ethernet para supervisión, configuración y transmisión de datos mediante redes TCP/IP.
 
@@ -97,13 +97,13 @@ El sistema desarrollado utiliza distintas interfaces y protocolos de comunicaci�
 
 \subsection{SPI}
 
-La interfaz SPI fue utilizada para la comunicación entre el microcontrolador y distintos circuitos integrados externos, incluyendo las interfaces industriales SCLT3-8BT8 \cite{sclt38bt8} y VNI8200XP-32 \cite{vni8200xp32}, así como también el transceptor inalámbrico MRF24J40 \cite{mrf24j40}.
+La interfaz SPI fue utilizada para la comunicación entre el microcontrolador y distintos circuitos integrados externos, incluyendo las interfaces industriales SCLT3-8BT8 \cite{sclt38bt8} y VNI8200XP-32 \cite{vni8200xp32}, así como también el transceptor inalámbrico MRF\-24J40 \cite{mrf24j40}.
 
 SPI es un protocolo de comunicación serial síncrono basado en una arquitectura maestro-esclavo, caracterizado por su elevada velocidad de transferencia y baja complejidad de implementación. La interfaz utiliza líneas dedicadas de transmisión, recepción y señal de reloj, además de señales independientes de selección de dispositivo.
 
 \subsection{UART y RS-485}
 
-La interfaz UART fue utilizada junto con el transceptor SN65HVD82 \cite{sn65hvd82} para implementar comunicación RS-485 (\textit{Recommended Standard 485}, Estándar de Comunicación Diferencial Serie) \cite{rs485}.
+La interfaz UART fue utilizada junto con el transceptor SN65HVD82 \cite{sn65hvd82} para implementar comunicación RS-485 \cite{rs485}.
 
 UART permite establecer comunicaciones seriales asíncronas mediante transmisión y recepción de datos sin necesidad de señal de reloj compartida. En conjunto con RS-485, posibilita implementar enlaces diferenciales robustos, adecuados para entornos industriales con elevado nivel de ruido electromagnético y largas distancias de cableado.
 
@@ -111,18 +111,18 @@ UART permite establecer comunicaciones seriales asíncronas mediante transmisió
 
 La conectividad Ethernet del sistema se implementó mediante el periférico Ethernet MAC integrado en el microcontrolador STM32H563RI \cite{STM32H563_RefManual} y el transceptor Ethernet PHY LAN8742A \cite{lan8742a}.
 
-La comunicación entre el microcontrolador y el PHY se realizó mediante la interfaz RMII (\textit{Reduced Media Independent Interface}, Interfaz Independiente del Medio Reducida) \cite{rmii}, utilizada para transmisión y recepción de datos Ethernet con bajo número de pines.
+La comunicación entre el microcontrolador y el PHY se realizó mediante la interfaz RMII \cite{rmii}, utilizada para transmisión y recepción de datos Ethernet con bajo número de pines.
 
 La capa física Ethernet permite establecer comunicación 10BASE-T y 100BASE-TX sobre medio cableado de par trenzado. Esto facilita la integración con redes Ethernet industriales y servicios basados en TCP/IP.
 
 \subsection{GPIO}
 
-Las interfaces GPIO (\textit{General Purpose Input/Output}, Entrada/Salida de Propósito General) fueron utilizadas para el manejo de señales digitales de control, monitoreo de estados y accionamiento de indicadores luminosos.
+Las interfaces GPIO (\textit{General Purpose Input/Output}, entrada/salida de propósito general) fueron utilizadas para el manejo de señales digitales de control, monitoreo de estados y accionamiento de indicadores luminosos.
 
 Estas señales incluyen líneas de habilitación de periféricos, señales de interrupción, selección de dispositivos SPI, monitoreo de estados de alimentación y control de LEDs indicadores presentes en la placa.
 
 \subsection{SWD}
 
-La programación y depuración del microcontrolador se realizó mediante la interfaz SWD (\textit{Serial Wire Debug}, Depuración Serie de Dos Hilos) \cite{swi}, utilizada por las herramientas de desarrollo STMicroelectronics.
+La programación y depuración del microcontrolador se realizó mediante la interfaz SWD (\textit{Serial Wire Debug}) \cite{swi}, utilizada por las herramientas de desarrollo STMicroelectronics.
 
 SWD constituye una interfaz de depuración derivada de JTAG (\textit{Joint Test Action Group}) \cite{jtag}. Esta interfaz reduce la cantidad de señales requeridas y conserva capacidades de programación, ejecución paso a paso, lectura de memoria y monitoreo interno del sistema embebido.

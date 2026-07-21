@@ -18,9 +18,9 @@ La figura \ref{fig:arquitectura_general} presenta la arquitectura general del si
 
 La figura \ref{fig:arquitectura_hardware} presenta el diagrama de bloques del hardware desarrollado. La arquitectura se basa en un microcontrolador encargado de gestionar las interfaces de comunicación, las entradas y salidas industriales y los módulos auxiliares del sistema. Asimismo, se distinguen los bloques comunes a las estaciones centrales y remotas y aquellos específicos de cada tipo de nodo.
 
-Con el objetivo de uniformar el desarrollo y reducir costos durante una etapa inicial del trabajo, se implementó un único diseño de placa de circuito impreso PCB (\textit{Printed Circuit Board}, Placa de Circuito Impreso) tanto para las estaciones centrales como para las estaciones remotas. Esta estrategia permitió reutilizar el mismo diseño base de hardware y poblar únicamente los componentes requeridos según las funcionalidades de cada estación. Además de simplificar el proceso de desarrollo, esta decisión redujo los costos de fabricación y facilitó las tareas de validación y mantenimiento del sistema.
+Con el objetivo de uniformar el desarrollo y reducir costos durante una etapa inicial del trabajo, se implementó un único diseño de placa de circuito impreso PCB (\textit{Printed Circuit Board}, placa de circuito impreso) tanto para las estaciones centrales como para las estaciones remotas. Esta estrategia permitió reutilizar el mismo diseño base de hardware y poblar únicamente los componentes requeridos según las funcionalidades de cada estación. Además de simplificar el proceso de desarrollo, esta decisión redujo los costos de fabricación y facilitó las tareas de validación y mantenimiento del sistema.
 
-La estación central incorpora un transceptor Ethernet para la comunicación con una interfaz de usuario ubicada en un nivel jerárquico superior. Asimismo, dispone de un reloj de tiempo real RTC (\textit{Real-Time Clock}, Reloj de Tiempo Real), utilizado para el registro y mantenimiento de fecha y hora ante interrupciones en la alimentación principal.
+La estación central incorpora un transceptor Ethernet para la comunicación con una interfaz de usuario ubicada en un nivel jerárquico superior. Asimismo, dispone de un reloj de tiempo real RTC (\textit{Real-Time Clock}, reloj de tiempo real), utilizado para el registro y mantenimiento de fecha y hora ante interrupciones en la alimentación principal.
 
 Por otro lado, las estaciones remotas incorporan una interfaz RS485 para la comunicación con instrumentos industriales y módulos de entradas y salidas digitales destinados a la adquisición y accionamiento de variables de proceso.
 
@@ -34,9 +34,14 @@ Tanto las estaciones centrales como las remotas comparten los módulos de alimen
 \end{figure}
 
 \subsection{Diagrama de bloques del firmware}
-La figura \ref{fig:arquitectura_firmware} presenta la arquitectura general del firmware implementado en el sistema. Este fue organizado en capas con el objetivo de desacoplar la lógica de aplicación de las dependencias específicas del hardware y facilitar la reutilización de código entre estaciones centrales y remotas.
 
-La capa superior contiene la lógica de control y supervisión del sistema. Por debajo se ubica una API (\textit{Application Programming Interface}, Interfaz de Programación de Aplicaciones) encargada de abstraer el acceso a sensores, actuadores e interfaces del sistema. Las capas intermedias incorporan los servicios de middleware, incluyendo el sistema operativo en tiempo real FreeRTOS y la pila de comunicaciones lwIP. Finalmente, las capas inferiores contienen los controladores de periféricos, la capa de abstracción de hardware HAL (\textit{Hardware Abstraction Layer}, Capa de Abstracción de Hardware) y los módulos físicos del sistema.
+La figura \ref{fig:arquitectura_firmware} presenta la arquitectura general del firmware desarrollado para el sistema. Este fue organizado en capas con el objetivo de desacoplar la lógica de aplicación de las dependencias específicas del hardware, favorecer la modularidad del software y facilitar la reutilización de código entre estaciones centrales y remotas.
+
+La capa superior implementa la lógica de control y supervisión del sistema. Por debajo se ubica una API (\textit{Application Programming Interface}, interfaz de programación de aplicaciones) encargada de abstraer el acceso a sensores, actuadores e interfaces de comunicación mediante una interfaz uniforme e independiente del hardware subyacente. Esta capa proporciona los servicios necesarios para que la aplicación de usuario pueda implementarse y adaptarse a distintos procesos productivos sin requerir modificaciones en las capas inferiores del firmware.
+
+Las capas intermedias agrupan los servicios de \textit{middleware}, entre los que se encuentran la pila de protocolos lwIP y el sistema operativo en tiempo real FreeRTOS. La interacción entre la aplicación y el sistema operativo se realiza mediante la capa de abstracción CMSIS-RTOS2, la cual proporciona una interfaz estandarizada e independiente de la implementación particular del RTOS. De esta manera, la aplicación puede desarrollarse sin depender directamente de FreeRTOS, facilitando la portabilidad del software hacia otros sistemas operativos compatibles con CMSIS-RTOS2.
+
+Finalmente, las capas inferiores comprenden los controladores de periféricos y comunicaciones, responsables del acceso a las interfaces de hardware, la capa HAL provista por STM32 y, en el nivel más bajo, los módulos físicos que conforman la plataforma, tales como el microcontrolador, el reloj de tiempo real y las interfaces industriales.
 
 \begin{figure}[ht]
 	\centering
@@ -44,3 +49,52 @@ La capa superior contiene la lógica de control y supervisión del sistema. Por 
 	\caption{Diagrama de bloques general del firmware.}
 	\label{fig:arquitectura_firmware}
 \end{figure}
+
+%----------------------------------------------------------------------------------------
+\section{Diseño del hardware}
+
+El diseño del hardware tuvo como objetivo materializar la arquitectura presentada en la sección anterior mediante una plataforma electrónica robusta, modular y adecuada para aplicaciones industriales. Para ello se seleccionaron componentes con características orientadas al entorno industrial y se adoptaron criterios de diseño que priorizaron la confiabilidad, la inmunidad frente a perturbaciones eléctricas, la facilidad de fabricación y la escalabilidad del sistema.
+
+En las siguientes subsecciones se describen los principales bloques funcionales del hardware desarrollado, abordando las decisiones de diseño adoptadas, la selección de los componentes más relevantes y los criterios empleados para el diseño de la placa de circuito impreso.
+
+\subsection{Plataforma de procesamiento}
+
+El núcleo de procesamiento de la plataforma se implementó mediante el microcontrolador STM32H563ZI de STMicroelectronics, perteneciente a la familia STM32H5. La selección de este dispositivo respondió a la necesidad de disponer de una plataforma con suficiente capacidad de procesamiento para ejecutar simultáneamente tareas de adquisición de datos, control industrial y comunicaciones, permitiendo además incorporar futuras funcionalidades sin requerir modificaciones en la plataforma de procesamiento. La utilización de un mismo microcontrolador tanto en la estación central como en las estaciones remotas permitió unificar la arquitectura de hardware, simplificando el desarrollo del firmware y favoreciendo la reutilización de controladores, configuraciones de periféricos y capas de abstracción entre ambos tipos de nodos.
+
+La disponibilidad de múltiples interfaces de comunicación independientes constituyó uno de los principales criterios para la selección del STM32H563ZI. Esta característica permitió asignar un periférico específico a cada uno de los módulos de la plataforma, evitando compartir recursos críticos y simplificando tanto el diseño del hardware como la implementación del firmware. La figura \ref{fig:main_schematic} resume esta distribución de periféricos y su interconexión con los principales módulos funcionales del sistema.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1.0\textwidth]{./Figures/main_schematic.pdf}
+	\caption{Asignación de interfaces del microcontrolador a los distintos módulos funcionales.}
+	\label{fig:main_schematic}
+\end{figure}
+
+Se seleccionó la variante STM32H563ZI en encapsulado LQFP64, cuya disponibilidad de periféricos y líneas de entrada y salida resultó suficiente para implementar todas las funcionalidades previstas en la plataforma. Asimismo, al pertenecer a la misma familia de microcontroladores empleada en la placa de evaluación NUCLEO-H563ZI, fue posible desarrollar y validar las primeras versiones del firmware sobre dicha plataforma y, posteriormente, migrarlas posteriormente al hardware desarrollado con modificaciones mínimas. Esta estrategia permitió reducir los tiempos de desarrollo, aprovechar los ejemplos y bibliotecas proporcionados por STMicroelectronics y disminuir los riesgos asociados a la puesta en marcha del prototipo.
+
+En conjunto, estas características permitieron disponer de una plataforma de procesamiento capaz de satisfacer los requerimientos funcionales del sistema, manteniendo un elevado grado de reutilización del hardware y del firmware entre las distintas variantes de la plataforma.
+
+\subsection{Sistema de alimentación}
+
+La etapa de alimentación fue diseñada para proporcionar un dominio de alimentación aislado de 5 V a partir de una alimentación industrial nominal de 24 V, garantizando además un elevado nivel de robustez frente a las condiciones eléctricas habituales presentes en entornos industriales. La tensión de entrada de 24 V se distribuye directamente hacia las etapas de entradas y salidas industriales, mientras que la electrónica de procesamiento dispone de una alimentación aislada de 5 V, a partir de la cual se obtiene posteriormente la tensión de 3,3 V utilizada por el microcontrolador y los circuitos digitales. Esta arquitectura permite desacoplar eléctricamente la lógica de control del dominio de potencia industrial, mejorando la inmunidad frente a perturbaciones y diferencias de potencial. El esquema simplificado de esta etapa se presenta en la figura \ref{fig:pwr_schematic}.
+
+La conversión de energía se realiza mediante el módulo convertidor CC-CC aislado 1769405341 de Würth Elektronik, el cual admite una tensión de entrada nominal de 24 V y entrega una salida regulada de 5 V con una capacidad de corriente de hasta 400 mA. El convertidor incorpora aislamiento galvánico entre la entrada y la salida, proporcionando una tensión de aislamiento de 1 kV, lo que permite desacoplar eléctricamente la electrónica de control respecto del dominio de alimentación industrial y reducir la propagación de perturbaciones y diferencias de potencial provenientes del entorno industrial.
+
+Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéticas, tanto la entrada como la salida del convertidor incorporan capacitores de desacople ubicados próximos al módulo. Estos elementos reducen el ruido conducido y estabilizan la tensión de alimentación, contribuyendo al correcto funcionamiento de la electrónica digital.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1.0\textwidth]{./Figures/pwr_schematic.pdf}
+	\caption{Esquema eléctrico de la etapa de alimentación.}
+	\label{fig:pwr_schematic}
+\end{figure}
+
+La protección de la entrada contempla múltiples mecanismos destinados a incrementar la confiabilidad del sistema. Un fusible de 10 A constituye la primera barrera frente a condiciones de sobrecorriente o cortocircuito, limitando la energía disponible durante una falla. A continuación, un diodo TVS de 26 V protege al convertidor frente a sobretensiones transitorias generadas sobre la línea de alimentación, mientras que un diodo \textit{Schottky} conectado en serie impide la circulación de corriente en sentido inverso, proporcionando protección frente a inversiones accidentales de polaridad y evitando daños sobre los circuitos posteriores.
+
+A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, evitando incorporar una segunda etapa de conversión conmutada.
+
+%\subsection{Interfaces industriales}
+
+%\subsection{Interfaces de comunicación}
+
+%\subsection{Diseño del PCB}
