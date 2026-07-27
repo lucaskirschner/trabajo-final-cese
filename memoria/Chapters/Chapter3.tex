@@ -72,15 +72,11 @@ La disponibilidad de múltiples interfaces de comunicación independientes const
 
 Se seleccionó la variante STM32H563ZI en encapsulado LQFP64, cuya disponibilidad de periféricos y líneas de entrada y salida resultó suficiente para implementar todas las funcionalidades previstas en la plataforma. Asimismo, al pertenecer a la misma familia de microcontroladores empleada en la placa de evaluación NUCLEO-H563ZI, fue posible desarrollar y validar las primeras versiones del firmware sobre dicha plataforma y, posteriormente, migrarlas posteriormente al hardware desarrollado con modificaciones mínimas. Esta estrategia permitió reducir los tiempos de desarrollo, aprovechar los ejemplos y bibliotecas proporcionados por STMicroelectronics y disminuir los riesgos asociados a la puesta en marcha del prototipo.
 
-En conjunto, estas características permitieron disponer de una plataforma de procesamiento capaz de satisfacer los requerimientos funcionales del sistema, manteniendo un elevado grado de reutilización del hardware y del firmware entre las distintas variantes de la plataforma.
+Todas estas características permitieron disponer de una plataforma de procesamiento capaz de satisfacer los requerimientos funcionales del sistema, manteniendo un elevado grado de reutilización del hardware y del firmware entre las distintas variantes de la plataforma.
 
 \subsection{Sistema de alimentación}
 
 La etapa de alimentación fue diseñada para proporcionar un dominio de alimentación aislado de 5 V a partir de una alimentación industrial nominal de 24 V, garantizando además un elevado nivel de robustez frente a las condiciones eléctricas habituales presentes en entornos industriales. La tensión de entrada de 24 V se distribuye directamente hacia las etapas de entradas y salidas industriales, mientras que la electrónica de procesamiento dispone de una alimentación aislada de 5 V, a partir de la cual se obtiene posteriormente la tensión de 3,3 V utilizada por el microcontrolador y los circuitos digitales. Esta arquitectura permite desacoplar eléctricamente la lógica de control del dominio de potencia industrial, mejorando la inmunidad frente a perturbaciones y diferencias de potencial. El esquema simplificado de esta etapa se presenta en la figura \ref{fig:pwr_schematic}.
-
-La conversión de energía se realiza mediante el módulo convertidor CC-CC aislado 1769405341 de Würth Elektronik, el cual admite una tensión de entrada nominal de 24 V y entrega una salida regulada de 5 V con una capacidad de corriente de hasta 400 mA. El convertidor incorpora aislamiento galvánico entre la entrada y la salida, proporcionando una tensión de aislamiento de 1 kV, lo que permite desacoplar eléctricamente la electrónica de control respecto del dominio de alimentación industrial y reducir la propagación de perturbaciones y diferencias de potencial provenientes del entorno industrial.
-
-Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéticas, tanto la entrada como la salida del convertidor incorporan capacitores de desacople ubicados próximos al módulo. Estos elementos reducen el ruido conducido y estabilizan la tensión de alimentación, contribuyendo al correcto funcionamiento de la electrónica digital.
 
 \begin{figure}[ht]
 	\centering
@@ -89,12 +85,58 @@ Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéti
 	\label{fig:pwr_schematic}
 \end{figure}
 
+La conversión de energía se realiza mediante el módulo convertidor CC-CC aislado 1769405341 de Würth Elektronik, el cual admite una tensión de entrada nominal de 24 V y entrega una salida regulada de 5 V con una capacidad de corriente de hasta 400 mA. El convertidor incorpora aislamiento galvánico entre la entrada y la salida, proporcionando una tensión de aislamiento de 1 kV, lo que permite desacoplar eléctricamente la electrónica de control respecto del dominio de alimentación industrial y reducir la propagación de perturbaciones y diferencias de potencial provenientes del entorno industrial.
+
+Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéticas, tanto la entrada como la salida del convertidor incorporan capacitores de desacople ubicados próximos al módulo. Estos elementos reducen el ruido conducido y estabilizan la tensión de alimentación, contribuyendo al correcto funcionamiento de la electrónica digital.
+
 La protección de la entrada contempla múltiples mecanismos destinados a incrementar la confiabilidad del sistema. Un fusible de 10 A constituye la primera barrera frente a condiciones de sobrecorriente o cortocircuito, limitando la energía disponible durante una falla. A continuación, un diodo TVS de 26 V protege al convertidor frente a sobretensiones transitorias generadas sobre la línea de alimentación, mientras que un diodo \textit{Schottky} conectado en serie impide la circulación de corriente en sentido inverso, proporcionando protección frente a inversiones accidentales de polaridad y evitando daños sobre los circuitos posteriores.
 
 A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, evitando incorporar una segunda etapa de conversión conmutada.
 
-%\subsection{Interfaces industriales}
+\subsection{Entradas digitales industriales}
 
-%\subsection{Interfaces de comunicación}
+Las estaciones remotas fueron concebidas para interactuar directamente con sensores industriales mediante entradas digitales compatibles con señales de 24 V, permitiendo la adquisición confiable de estados discretos provenientes de sensores, interruptores y dispositivos de campo.
 
-%\subsection{Diseño del PCB}
+Para implementar las entradas digitales se seleccionó el circuito integrado SCLT3-8BT8 de STMicroelectronics, un receptor de ocho canales específicamente desarrollado para aplicaciones de automatización industrial y compatible con los requisitos de la norma IEC 61131-2 \cite{iec61131_2} para entradas digitales de PLC.
+
+El dispositivo incorpora el acondicionamiento necesario para la conexión directa de señales industriales de 24 V, integrando protección frente a sobretensiones, filtrado de ruido, detección del estado lógico y comunicación con el microcontrolador mediante una interfaz SPI. Esta solución reduce significativamente la cantidad de componentes discretos necesarios respecto de una implementación convencional basada en optoacopladores, comparadores y circuitos de protección individuales.
+
+\subsection{Salidas digitales industriales}
+
+Las estaciones remotas incorporan salidas digitales destinadas al accionamiento de cargas industriales alimentadas a 24 V, tales como relés, electroválvulas, contactores y otros actuadores utilizados habitualmente en sistemas de automatización.
+
+Las salidas digitales se implementaron mediante el circuito integrado VNI8200XP-32 de STMicroelectronics, un controlador inteligente de ocho salidas \textit{high-side} diseñado para aplicaciones industriales. Cada canal puede operar con tensiones comprendidas entre 10,5 V y 36 V, suministrando hasta 1 A de corriente continua.
+
+El dispositivo integra protección individual frente a sobrecorriente, cortocircuito y sobretemperatura, además de diagnóstico del estado de alimentación y detección de fallas mediante interfaz SPI. Estas características incrementan la confiabilidad del sistema y permiten detectar condiciones anómalas sin necesidad de circuitería adicional.
+
+Debido a que las cargas industriales se alimentan desde una fuente de 24 V independiente de la electrónica de control y la comunicación con el microcontrolador se realiza mediante una interfaz digital SPI aislada del dominio de potencia, la arquitectura implementada preserva el aislamiento galvánico requerido entre la lógica de control y las salidas industriales.
+
+\subsection{Interfaz de comunicación RS485}
+
+Con el objetivo de permitir la integración de las estaciones remotas con equipos industriales externos, el sistema incorpora una interfaz de comunicación diferencial basada en el estándar RS485.
+
+La comunicación cableada con equipos industriales se implementó mediante un transceptor diferencial SN65HVD82 de Texas Instruments, compatible con el estándar TIA/EIA-485-A \cite{tia_eia485a}. El dispositivo opera sobre buses multipunto de dos hilos y soporta velocidades de transmisión de hasta 200 kb/s en enlaces de aproximadamente 1200 m.
+
+El transceptor se conecta al microcontrolador mediante una interfaz UART y una señal adicional de control de dirección, permitiendo la implementación de enlaces semidúplex compatibles con la mayoría de los instrumentos industriales y dispositivos de automatización disponibles comercialmente.
+
+\subsection{Comunicación inalámbrica}
+
+La comunicación entre la estación central y las estaciones remotas se implementó mediante el módulo de radiofrecuencia MRF24J40MA de Microchip Technology, un transceptor compatible con el estándar IEEE 802.15.4 \cite{ieee_standard} que opera en la banda ISM de 2,4 GHz. El módulo integra el transceptor de radio, el cristal de referencia, la red de adaptación de impedancias, el regulador interno y una antena impresa sobre la propia placa, reduciendo la complejidad del diseño de RF y simplificando su integración en el sistema.
+
+El MRF24J40MA se comunica con el microcontrolador mediante una interfaz SPI de cuatro hilos, complementada con señales dedicadas de interrupción, reinicio y activación, permitiendo una integración sencilla con la arquitectura de firmware desarrollada para el proyecto. Asimismo, el módulo soporta una velocidad física de transmisión de 250 kb/s y un alcance de hasta aproximadamente 120 m en condiciones de línea de vista, superando ampliamente el requerimiento de al menos 20 m de cobertura en ambientes interiores establecido para el sistema.
+
+Desde el punto de vista del protocolo de comunicación, la implementación se basa en las capacidades proporcionadas por la capa MAC del estándar IEEE 802.15.4, la cual incorpora de forma nativa mecanismos de acuse automático de recibo y retransmisión automática de tramas no confirmadas, satisfaciendo el requerimiento de confiabilidad definido para el enlace inalámbrico. Adicionalmente, el hardware implementa mecanismos de acceso al medio mediante CSMA/CA, verificación automática de la integridad de las tramas y medición de la calidad del enlace, contribuyendo a mejorar la robustez de la comunicación en entornos industriales.
+
+\subsection{Interfaz Ethernet}
+
+La estación central incorpora una interfaz Ethernet. Para ello se seleccionó el circuito integrado LAN8742A de Microchip Technology, un transceptor Ethernet (\textit{PHY}) compatible con el estándar IEEE 802.3 \cite{ieee8023} para redes 10BASE-T y 100BASE-TX.
+
+El LAN8742A se conecta al microcontrolador mediante la interfaz RMII (\textit{Reduced Media Independent Interface}), mientras que la pila de protocolos TCP/IP es ejecutada por el propio STM32H563 mediante el middleware lwIP. Esta arquitectura permite desacoplar las funciones correspondientes a la capa física de las implementadas por el microcontrolador, proporcionando una solución ampliamente utilizada en sistemas embebidos con conectividad Ethernet.
+
+La interfaz implementada admite velocidades de operación de 10 y 100 Mb/s con negociación automática, cumpliendo el requerimiento de disponer de conectividad Ethernet 10/100 para la integración con sistemas SCADA y otras aplicaciones de supervisión industrial. Asimismo, la utilización de una interfaz cableada dedicada en la estación central permite separar el enlace inalámbrico utilizado para la comunicación con las estaciones remotas de la red de supervisión, facilitando la integración del sistema dentro de infraestructuras industriales existentes.
+
+\subsection{Diseño del PCB}
+
+El diseño del PCB se realizó considerando los requerimientos funcionales del sistema y la necesidad de obtener una solución de bajo costo de fabricación. Para ello, se optó por una placa de dos capas, cuya densidad de interconexión resultó suficiente para integrar todos los módulos de la plataforma sin recurrir a una estructura multicapa.
+
+Durante el diseño se siguieron las recomendaciones establecidas por los estándares IPC-2221A \cite{ipc2221a} e IPC-2222 \cite{ipc2222} para el desarrollo de circuitos impresos, contemplando criterios relacionados con el dimensionamiento de pistas, separación entre conductores, distribución de planos de masa y compatibilidad electromagnética. Asimismo, los \textit{footprints} de los componentes fueron desarrollados conforme a la norma IPC-7351 \cite{ipc7351}, mientras que la elaboración de los esquemáticos adoptó la simbología definida por el estándar IEEE Std 315-1975 \cite{ieee315}, garantizando uniformidad y compatibilidad con las prácticas habituales de diseño electrónico.
