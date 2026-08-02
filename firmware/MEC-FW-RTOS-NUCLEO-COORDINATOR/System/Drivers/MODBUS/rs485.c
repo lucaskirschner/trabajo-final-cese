@@ -43,8 +43,7 @@
 
 /* ============================= Includes ================================== */
 
-#include "rs485.h"
-
+#include <MODBUS/rs485.h>
 #include "rs485_port.h"
 
 #include <stddef.h>
