@@ -76,7 +76,7 @@ Todas estas características permitieron disponer de una plataforma de procesami
 
 \subsection{Sistema de alimentación}
 
-La etapa de alimentación fue diseñada para proporcionar un dominio de alimentación aislado de 5 V a partir de una alimentación industrial nominal de 24 V, garantizando además un elevado nivel de robustez frente a las condiciones eléctricas habituales presentes en entornos industriales. La tensión de entrada de 24 V se distribuye directamente hacia las etapas de entradas y salidas industriales, mientras que la electrónica de procesamiento dispone de una alimentación aislada de 5 V, a partir de la cual se obtiene posteriormente la tensión de 3,3 V utilizada por el microcontrolador y los circuitos digitales. Esta arquitectura permite desacoplar eléctricamente la lógica de control del dominio de potencia industrial, mejorando la inmunidad frente a perturbaciones y diferencias de potencial. El esquema simplificado de esta etapa se presenta en la figura \ref{fig:pwr_schematic}.
+La etapa de alimentación fue diseñada para proporcionar un dominio de alimentación aislado de 5 V a partir de una alimentación industrial nominal de 24 V, garantizando además un elevado nivel de robustez frente a las condiciones eléctricas habituales presentes en entornos industriales. La tensión de entrada de 24 V se distribuye directamente hacia las etapas de entradas y salidas industriales, mientras que la electrónica de procesamiento dispone de una alimentación aislada de 5 V, a partir de la cual se obtiene posteriormente la tensión de 3,3 V utilizada por el microcontrolador y los circuitos digitales. Esta arquitectura permite desacoplar eléctricamente la lógica de control del dominio de potencia industrial, mejorando la inmunidad frente a perturbaciones y diferencias de potencial. El esquema eléctrico de esta etapa se presenta en la figura \ref{fig:pwr_schematic}.
 
 \begin{figure}[ht]
 	\centering
@@ -93,7 +93,7 @@ La protección de la entrada contempla múltiples mecanismos destinados a increm
 
 A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, evitando incorporar una segunda etapa de conversión conmutada.
 
-\subsection{Entradas digitales industriales}
+\subsection{Entradas digitales}
 
 Las estaciones remotas fueron concebidas para interactuar directamente con sensores industriales mediante entradas digitales compatibles con señales de 24 V, permitiendo la adquisición confiable de estados discretos provenientes de sensores, interruptores y dispositivos de campo.
 
@@ -101,7 +101,7 @@ Para implementar las entradas digitales se seleccionó el circuito integrado SCL
 
 El dispositivo incorpora el acondicionamiento necesario para la conexión directa de señales industriales de 24 V, integrando protección frente a sobretensiones, filtrado de ruido, detección del estado lógico y comunicación con el microcontrolador mediante una interfaz SPI. Esta solución reduce significativamente la cantidad de componentes discretos necesarios respecto de una implementación convencional basada en optoacopladores, comparadores y circuitos de protección individuales.
 
-\subsection{Salidas digitales industriales}
+\subsection{Salidas digitales}
 
 Las estaciones remotas incorporan salidas digitales destinadas al accionamiento de cargas industriales alimentadas a 24 V, tales como relés, electroválvulas, contactores y otros actuadores utilizados habitualmente en sistemas de automatización.
 
@@ -111,7 +111,7 @@ El dispositivo integra protección individual frente a sobrecorriente, cortocirc
 
 Debido a que las cargas industriales se alimentan desde una fuente de 24 V independiente de la electrónica de control y la comunicación con el microcontrolador se realiza mediante una interfaz digital SPI aislada del dominio de potencia, la arquitectura implementada preserva el aislamiento galvánico requerido entre la lógica de control y las salidas industriales.
 
-\subsection{Interfaz de comunicación RS485}
+\subsection{Interfaz RS485}
 
 Con el objetivo de permitir la integración de las estaciones remotas con equipos industriales externos, el sistema incorpora una interfaz de comunicación diferencial basada en el estándar RS485.
 
@@ -119,7 +119,7 @@ La comunicación cableada con equipos industriales se implementó mediante un tr
 
 El transceptor se conecta al microcontrolador mediante una interfaz UART y una señal adicional de control de dirección, permitiendo la implementación de enlaces semidúplex compatibles con la mayoría de los instrumentos industriales y dispositivos de automatización disponibles comercialmente.
 
-\subsection{Comunicación inalámbrica}
+\subsection{Interfaz inalámbrica}
 
 La comunicación entre la estación central y las estaciones remotas se implementó mediante el módulo de radiofrecuencia MRF24J40MA de Microchip Technology, un transceptor compatible con el estándar IEEE 802.15.4 \cite{ieee_standard} que opera en la banda ISM de 2,4 GHz. El módulo integra el transceptor de radio, el cristal de referencia, la red de adaptación de impedancias, el regulador interno y una antena impresa sobre la propia placa, reduciendo la complejidad del diseño de RF y simplificando su integración en el sistema.
 
@@ -140,3 +140,92 @@ La interfaz implementada admite velocidades de operación de 10 y 100 Mb/s con n
 El diseño del PCB se realizó considerando los requerimientos funcionales del sistema y la necesidad de obtener una solución de bajo costo de fabricación. Para ello, se optó por una placa de dos capas, cuya densidad de interconexión resultó suficiente para integrar todos los módulos de la plataforma sin recurrir a una estructura multicapa.
 
 Durante el diseño se siguieron las recomendaciones establecidas por los estándares IPC-2221A \cite{ipc2221a} e IPC-2222 \cite{ipc2222} para el desarrollo de circuitos impresos, contemplando criterios relacionados con el dimensionamiento de pistas, separación entre conductores, distribución de planos de masa y compatibilidad electromagnética. Asimismo, los \textit{footprints} de los componentes fueron desarrollados conforme a la norma IPC-7351 \cite{ipc7351}, mientras que la elaboración de los esquemáticos adoptó la simbología definida por el estándar IEEE Std 315-1975 \cite{ieee315}, garantizando uniformidad y compatibilidad con las prácticas habituales de diseño electrónico.
+
+Como resultado de este proceso se obtuvo el diseño de la placa mostrado en la figura \ref{fig:pcb_3d_top}, en el cual se integran los distintos bloques funcionales descritos previamente. La distribución de los componentes se realizó procurando mantener una organización física acorde con las funciones de cada subsistema y facilitar el acceso a los conectores e interfaces externas de la plataforma.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.9\textwidth]{./Figures/pcb_3d_top.pdf}
+	\caption{Vista tridimensional del PCB desarrollado.}
+	\label{fig:pcb_3d_top}
+\end{figure}
+
+%----------------------------------------------------------------------------------------
+\section{Diseño del firmware}
+
+El firmware desarrollado para el sistema fue diseñado con una arquitectura modular orientada a facilitar su mantenimiento, escalabilidad y reutilización entre las distintas variantes de la plataforma. Para ello, se adoptó un sistema operativo de tiempo real que permite organizar la ejecución del software en múltiples tareas concurrentes, coordinadas mediante mecanismos de sincronización y comunicación entre procesos.
+
+En esta sección se describe la organización general del firmware, el proceso de inicialización del sistema, la distribución de responsabilidades entre las distintas tareas, el manejo de interrupciones, la estructura de los drivers y la lógica de control implementada.
+
+\subsection{Organización general del firmware}
+
+El firmware fue concebido como un conjunto de módulos independientes que ejecutan funciones específicas de manera concurrente sobre FreeRTOS. Esta organización permite distribuir las distintas responsabilidades del sistema entre tareas dedicadas, favoreciendo una arquitectura modular, escalable y fácilmente mantenible. La interacción entre tareas se realiza exclusivamente mediante interfaces de aplicación bien definidas, evitando el acceso directo a los recursos administrados por otros módulos y promoviendo un bajo acoplamiento entre las distintas funcionalidades del sistema.
+
+Dado que la estación central y las estaciones remotas poseen responsabilidades diferentes, el firmware adopta una organización particular para cada una de ellas. No obstante, ambas implementaciones comparten la misma filosofía de diseño, donde la tarea \texttt{userTask} concentra la lógica de aplicación, mientras que el acceso a cada periférico o servicio del sistema se realiza mediante tareas especificas.
+
+La figura \ref{fig:firmware_master} presenta la organización general del firmware implementado en la estación central. En esta arquitectura, la tarea \texttt{userTask} interactúa con la comunicación inalámbrica mediante las funciones \texttt{app\_rf\_send()} y \texttt{app\_rf\_\-receive()}, delegando su ejecución a la tarea \texttt{rfTask}. De forma análoga, las operaciones relacionadas con el reloj en tiempo real se realizan mediante las funciones \texttt{app\_rtc\_set()} y \texttt{app\_rtc\_get()}, administradas por la tarea \texttt{rtc\-Task}. Adicionalmente, la tarea \texttt{diagnosticsTask} centraliza el tratamiento de las condiciones de falla notificadas por los distintos módulos mediante los eventos \texttt{ra\-dioFaultHandle}, \texttt{rtcFaultHandle} y \texttt{diagnosticsFaultHandle}, \\ proporcionando un mecanismo unificado para la supervisión del sistema.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.8\textwidth]{./Figures/arquitectura_master.pdf}
+	\caption{Organización general del firmware de la estación central.}
+	\label{fig:firmware_master}
+\end{figure}
+
+Por su parte, la figura \ref{fig:firmware_slave} muestra la organización correspondiente a las estaciones remotas. En este caso, además de la tarea \texttt{rfTask}, el firmware incorpora las tareas \texttt{dinTask}, \texttt{doutTask} y \texttt{rs485Task}, responsables de administrar las entradas digitales, las salidas digitales y la interfaz RS485, respectivamente. La tarea \texttt{userTask} accede a estos recursos mediante las funciones \texttt{app\_din\_read()}, \texttt{app\_dout\_set()}, \texttt{app\_rs485\_send()}, \texttt{app\_rs485\_receive()}, \texttt{app\_rf\_\-send()} y \texttt{app\_rf\_receive()}, manteniendo desacoplada la lógica de aplicación de la implementación específica de cada periférico. Al igual que en la estación central, las distintas tareas reportan las condiciones de error mediante los eventos \texttt{dinFaultHandle}, \texttt{doutFaultHandle}, \texttt{rs485FaultHandle}, \texttt{radio\-FaultHandle} y \texttt{diagnosticsFaultHandle}, que son procesadas por la tarea \texttt{diagnosticsTask}.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1.0\textwidth]{./Figures/arquitectura_slave.pdf}
+	\caption{Organización general del firmware de las estaciones remotas.}
+	\label{fig:firmware_slave}
+\end{figure}
+
+En ambas arquitecturas, esta división funcional permite encapsular la gestión de cada subsistema en tareas independientes, simplificando la incorporación de nuevas funcionalidades y facilitando el mantenimiento del firmware. Asimismo, el empleo de interfaces de aplicación estandarizadas reduce las dependencias entre módulos y proporciona una separación clara entre la lógica de control implementada por \texttt{userTask} y los mecanismos de acceso a los recursos físicos del sistema.
+
+\subsection{Organización de las tareas}
+
+Las tareas que conforman el firmware presentan distintos modos de ejecución y utilizan los mecanismos proporcionados por CMSIS-RTOS2 para su coordinación y acceso a recursos compartidos. A continuación, se describen las responsabilidades y los principales recursos asociados a cada una de ellas.
+
+\subsubsection{Tarea de entradas digitales}
+
+La tarea \texttt{dinTask} es responsable de mantener actualizado el estado de las entradas digitales de la estación remota. Para ello, realiza periódicamente la lectura del SCLT3-8BT8 y almacena la última imagen de entradas obtenida correctamente. La periodicidad de adquisición se establece mediante un retardo proporcionado por CMSIS-RTOS2, de manera que la tarea permanece bloqueada entre lecturas y libera tiempo de procesamiento para la ejecución del resto de las tareas del sistema.
+
+El acceso a la última imagen válida se encuentra protegido mediante el mutex \texttt{dinDataMutex}, ya que esta información puede ser actualizada por \texttt{dinTask} y consultada simultáneamente desde otras tareas. La función \texttt{app\_din\_read()} proporciona la interfaz de acceso a estos datos y devuelve una copia de la última imagen disponible sin realizar una nueva adquisición del hardware. De esta manera, las demás tareas pueden consultar el estado de las entradas sin acceder directamente al SCLT3-8BT8 ni interferir con la ejecución periódica de \texttt{dinTask}.
+
+Debido a que los circuitos de entradas y salidas digitales comparten el mismo periférico SPI, el acceso físico al bus se encuentra protegido mediante el mutex \texttt{ioPortSpiMutex} en la capa encargada de gestionar dicho recurso. Esto evita que las tareas asociadas a ambos subsistemas inicien transferencias simultáneas y garantiza el acceso exclusivo al periférico durante cada operación.
+
+Cuando durante la adquisición se detecta una condición de falla, \texttt{dinTask} la informa mediante el grupo de banderas de eventos \texttt{dinFault}, permitiendo que su tratamiento sea realizado posteriormente por la tarea de diagnóstico. De esta forma, la adquisición de las entradas permanece separada tanto de la lógica de aplicación como del procesamiento de las condiciones de error.
+
+\subsubsection{Tarea de salidas digitales}
+
+La tarea \texttt{doutTask} es responsable de gestionar la actualización de las salidas digitales de la estación remota. A diferencia de la tarea de entradas digitales, su ejecución no es periódica, sino que permanece bloqueada hasta que se recibe una nueva solicitud de actualización. Las demás tareas pueden establecer el estado deseado de las salidas mediante la función \texttt{app\_dout\_set()}, que incorpora la nueva imagen de salidas en la cola de mensajes \texttt{outOutputQueue}.
+
+Cuando existe una nueva imagen disponible, \texttt{doutTask} se desbloquea, extrae el dato de la cola y realiza la actualización del VNI8200XP-32. Este mecanismo desacopla la generación de una orden de salida de su ejecución sobre el hardware, evitando que la tarea solicitante deba acceder directamente al controlador o esperar a que finalice la transferencia correspondiente. Cuando no existen solicitudes pendientes, la tarea permanece bloqueada y no consume tiempo de procesamiento.
+
+Al igual que en el módulo de entradas digitales, el acceso al periférico SPI compartido se encuentra protegido mediante el mutex \texttt{ioPortSpiMutex}. La adquisición y liberación de este recurso se realiza en la capa encargada de gestionar el acceso físico al bus, garantizando que las operaciones sobre el SCLT3-8BT8 y el VNI8200XP-32 se ejecuten de manera mutuamente excluyente. De esta forma, \texttt{dinTask} y \texttt{doutTask} pueden operar de manera concurrente sin producir transferencias simultáneas sobre el mismo periférico SPI.
+
+Las condiciones de falla detectadas durante la actualización de las salidas, así como los errores asociados al funcionamiento de la cola, se notifican mediante el grupo de banderas de eventos \texttt{doutFault}. Esto permite delegar su tratamiento a la tarea de diagnóstico y mantener separadas las responsabilidades de accionamiento y supervisión del sistema.
+
+\subsubsection{Tarea de comunicación RS485}
+
+\subsubsection{Tarea de reloj de tiempo real}
+
+\subsubsection{Tarea de comunicación inalámbrica}
+
+\subsubsection{Tarea de diagnóstico}
+
+\subsubsection{Tarea de usuario}
+
+
+
+
+
+
+
+
+
+
+
+
+
