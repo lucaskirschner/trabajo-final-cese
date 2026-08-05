@@ -238,39 +238,42 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
-  if(huart->Instance==UART4)
+  if(huart->Instance==UART7)
   {
-    /* USER CODE BEGIN UART4_MspInit 0 */
+    /* USER CODE BEGIN UART7_MspInit 0 */
 
-    /* USER CODE END UART4_MspInit 0 */
+    /* USER CODE END UART7_MspInit 0 */
 
   /** Initializes the peripherals clock
   */
-    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART4;
-    PeriphClkInitStruct.Uart4ClockSelection = RCC_UART4CLKSOURCE_PCLK1;
+    PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_UART7;
+    PeriphClkInitStruct.Uart7ClockSelection = RCC_UART7CLKSOURCE_PCLK1;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
     {
       Error_Handler();
     }
 
     /* Peripheral clock enable */
-    __HAL_RCC_UART4_CLK_ENABLE();
+    __HAL_RCC_UART7_CLK_ENABLE();
 
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    /**UART4 GPIO Configuration
-    PA11     ------> UART4_RX
-    PA12     ------> UART4_TX
+    __HAL_RCC_GPIOF_CLK_ENABLE();
+    /**UART7 GPIO Configuration
+    PF6     ------> UART7_RX
+    PF7     ------> UART7_TX
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_11|GPIO_PIN_12;
+    GPIO_InitStruct.Pin = RS485_RO_Pin|RS485_DI_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    GPIO_InitStruct.Alternate = GPIO_AF6_UART4;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    GPIO_InitStruct.Alternate = GPIO_AF7_UART7;
+    HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
 
-    /* USER CODE BEGIN UART4_MspInit 1 */
+    /* UART7 interrupt Init */
+    HAL_NVIC_SetPriority(UART7_IRQn, 5, 0);
+    HAL_NVIC_EnableIRQ(UART7_IRQn);
+    /* USER CODE BEGIN UART7_MspInit 1 */
 
-    /* USER CODE END UART4_MspInit 1 */
+    /* USER CODE END UART7_MspInit 1 */
 
   }
 
@@ -284,23 +287,25 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart)
   */
 void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
 {
-  if(huart->Instance==UART4)
+  if(huart->Instance==UART7)
   {
-    /* USER CODE BEGIN UART4_MspDeInit 0 */
+    /* USER CODE BEGIN UART7_MspDeInit 0 */
 
-    /* USER CODE END UART4_MspDeInit 0 */
+    /* USER CODE END UART7_MspDeInit 0 */
     /* Peripheral clock disable */
-    __HAL_RCC_UART4_CLK_DISABLE();
+    __HAL_RCC_UART7_CLK_DISABLE();
 
-    /**UART4 GPIO Configuration
-    PA11     ------> UART4_RX
-    PA12     ------> UART4_TX
+    /**UART7 GPIO Configuration
+    PF6     ------> UART7_RX
+    PF7     ------> UART7_TX
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_11|GPIO_PIN_12);
+    HAL_GPIO_DeInit(GPIOF, RS485_RO_Pin|RS485_DI_Pin);
 
-    /* USER CODE BEGIN UART4_MspDeInit 1 */
+    /* UART7 interrupt DeInit */
+    HAL_NVIC_DisableIRQ(UART7_IRQn);
+    /* USER CODE BEGIN UART7_MspDeInit 1 */
 
-    /* USER CODE END UART4_MspDeInit 1 */
+    /* USER CODE END UART7_MspDeInit 1 */
   }
 
 }

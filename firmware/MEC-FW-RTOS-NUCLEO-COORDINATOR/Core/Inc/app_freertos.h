@@ -59,15 +59,20 @@ extern osThreadId_t userTaskHandle;
 extern osThreadId_t dinTaskHandle;
 extern osThreadId_t doutTaskHandle;
 extern osThreadId_t diagnosticsTaskHandle;
+extern osThreadId_t rs485TaskHandle;
 extern osMutexId_t ioPortSpiMutexHandle;
 extern osMutexId_t dinDataMutexHandle;
 extern osMessageQueueId_t radioInputQueueHandle;
 extern osMessageQueueId_t radioOutputQueueHandle;
 extern osMessageQueueId_t outOutputQueueHandle;
+extern osMessageQueueId_t rs485InputQueueHandle;
+extern osMessageQueueId_t rs485OutputQueueHandle;
 extern osEventFlagsId_t radioEventHandle;
 extern osEventFlagsId_t radioFaultHandle;
 extern osEventFlagsId_t dinFaultHandle;
 extern osEventFlagsId_t doutFaultHandle;
+extern osEventFlagsId_t rs485EventHandle;
+extern osEventFlagsId_t rs485FaultHandle;
 
 /* Exported function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -79,6 +84,7 @@ void userTask(void *argument);
 void dinTask(void *argument);
 void doutTask(void *argument);
 void diagnosticsTask(void *argument);
+void rs485Task(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 

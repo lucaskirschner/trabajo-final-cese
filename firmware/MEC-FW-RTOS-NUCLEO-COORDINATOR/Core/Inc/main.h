@@ -57,6 +57,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define RS485_RO_Pin GPIO_PIN_6
+#define RS485_RO_GPIO_Port GPIOF
+#define RS485_DI_Pin GPIO_PIN_7
+#define RS485_DI_GPIO_Port GPIOF
+#define RS485_DE_Pin GPIO_PIN_8
+#define RS485_DE_GPIO_Port GPIOF
+#define RS485_RE_Pin GPIO_PIN_9
+#define RS485_RE_GPIO_Port GPIOF
 #define INT_Pin GPIO_PIN_0
 #define INT_GPIO_Port GPIOA
 #define INT_EXTI_IRQn EXTI0_IRQn
@@ -66,10 +74,6 @@ void Error_Handler(void);
 #define SPI1_CS_VNI_GPIO_Port GPIOD
 #define SPI1_CS_CLT_Pin GPIO_PIN_15
 #define SPI1_CS_CLT_GPIO_Port GPIOD
-#define RS485_RE_Pin GPIO_PIN_9
-#define RS485_RE_GPIO_Port GPIOA
-#define RS485_DE_Pin GPIO_PIN_10
-#define RS485_DE_GPIO_Port GPIOA
 #define SPI3_CS_Pin GPIO_PIN_15
 #define SPI3_CS_GPIO_Port GPIOA
 #define WAKE_Pin GPIO_PIN_2

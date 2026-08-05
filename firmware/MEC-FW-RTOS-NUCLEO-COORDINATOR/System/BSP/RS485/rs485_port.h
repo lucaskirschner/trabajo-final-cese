@@ -25,17 +25,31 @@
 /**
  * @file    rs485_port.h
  * @author  Lucas Kirschner <kirschnerlucas1@gmail.com>
- * @date    2026-06-22
+ * @date    2026-08-04
  * @brief   BSP port layer for the RS485 interface.
  *
  * @details
  * This module provides a thin wrapper around STM32 HAL UART and GPIO services.
- * It controls the RS485 transceiver direction pins and exposes blocking
- * transmit/receive primitives to the upper RS485 driver layer.
+ * It controls the RS485 transceiver direction pins and exposes:
  *
- * The module assumes a conventional RS485 transceiver with:
+ * - Blocking UART transmission.
+ * - Interrupt-driven UART reception.
+ * - Reception abort for error recovery.
+ *
+ * Reception is started with rs485_port_receive_it(). The operation returns
+ * immediately and completes asynchronously through HAL_UART_RxCpltCallback().
+ *
+ * The module assumes a conventional half-duplex RS485 transceiver with:
+ *
  * - DE active high.
  * - /RE active low.
+ *
+ * The default idle state is receive mode:
+ *
+ * - DE = 0: Driver disabled.
+ * - /RE = 0: Receiver enabled.
+ *
+ * This layer does not use RTOS services and does not process protocol frames.
  *
  * @ingroup rs485_port
  * @{
@@ -47,7 +61,6 @@
 /* ============================= Includes ================================== */
 
 #include <stdint.h>
-#include <stdbool.h>
 
 /* ============================== Types ==================================== */
 
@@ -89,8 +102,14 @@ typedef struct
  * @param[in,out] handle  RS485 port handle.
  *
  * @return RS485_PORT_OK on success, error code otherwise.
+ *
+ * @details
+ * The function initializes the internal port state and leaves the transceiver
+ * in receive mode. UART7 and its GPIO pins must already have been initialized
+ * by the generated STM32 initialization code.
  */
-rs485_port_status_t rs485_port_init(rs485_port_handle_t *handle);
+rs485_port_status_t rs485_port_init(
+    rs485_port_handle_t * handle);
 
 /**
  * @brief Deinitialize the RS485 port layer.
@@ -98,45 +117,77 @@ rs485_port_status_t rs485_port_init(rs485_port_handle_t *handle);
  * @param[in,out] handle  RS485 port handle.
  *
  * @return RS485_PORT_OK on success, error code otherwise.
+ *
+ * @details
+ * Any pending interrupt-driven reception is aborted and the transceiver is
+ * returned to receive mode.
  */
-rs485_port_status_t rs485_port_deinit(rs485_port_handle_t *handle);
+rs485_port_status_t rs485_port_deinit(
+    rs485_port_handle_t * handle);
 
 /**
- * @brief Set the RS485 transceiver mode.
+ * @brief Set the RS485 transceiver operating mode.
  *
  * @param[in] mode  Desired transceiver mode.
  *
  * @return RS485_PORT_OK on success, error code otherwise.
  */
-rs485_port_status_t rs485_port_set_mode(rs485_port_mode_t mode);
+rs485_port_status_t rs485_port_set_mode(
+    rs485_port_mode_t mode);
 
 /**
- * @brief Transmit data through the RS485 UART.
+ * @brief Transmit data through UART7 using a blocking operation.
  *
- * @param[in] data        Pointer to the data buffer.
+ * @param[in] data        Pointer to the source buffer.
  * @param[in] size        Number of bytes to transmit.
- * @param[in] timeout_ms  Timeout in milliseconds.
+ * @param[in] timeout_ms  Transmission timeout in milliseconds.
  *
  * @return RS485_PORT_OK on success, error code otherwise.
+ *
+ * @details
+ * Direction control is not performed by this function. The upper RS485 driver
+ * must select transmit mode before calling it and restore receive mode after
+ * the operation finishes.
  */
 rs485_port_status_t rs485_port_transmit(
-    const uint8_t *data,
+    const uint8_t * data,
     uint16_t size,
     uint32_t timeout_ms);
 
 /**
- * @brief Receive data through the RS485 UART.
+ * @brief Start an interrupt-driven UART7 reception.
  *
- * @param[out] data       Pointer to the destination buffer.
- * @param[in] size        Number of bytes to receive.
- * @param[in] timeout_ms  Timeout in milliseconds.
+ * @param[out] data  Destination buffer that remains valid until completion.
+ * @param[in]  size  Number of bytes to receive.
+ *
+ * @return
+ * - RS485_PORT_OK: Reception started successfully.
+ * - RS485_PORT_E_NULL: @p data is NULL.
+ * - RS485_PORT_E_PARAM: @p size is zero.
+ * - RS485_PORT_E_STATE: Port is not initialized or UART is busy.
+ * - RS485_PORT_E_HW: HAL rejected the operation.
+ *
+ * @details
+ * This function calls HAL_UART_Receive_IT() and returns immediately. The
+ * caller must keep @p data valid until HAL_UART_RxCpltCallback() or
+ * HAL_UART_ErrorCallback() reports completion.
+ *
+ * Only one interrupt-driven reception may be active at a time.
+ */
+rs485_port_status_t rs485_port_receive_it(
+    uint8_t * data,
+    uint16_t size);
+
+/**
+ * @brief Abort the current UART7 reception operation.
  *
  * @return RS485_PORT_OK on success, error code otherwise.
+ *
+ * @details
+ * This function is intended for recovery after UART errors, task shutdown or
+ * explicit cancellation of a pending interrupt-driven reception.
  */
-rs485_port_status_t rs485_port_receive(
-    uint8_t *data,
-    uint16_t size,
-    uint32_t timeout_ms);
+rs485_port_status_t rs485_port_abort_receive(void);
 
 #endif /* RS485_PORT_H_ */
 

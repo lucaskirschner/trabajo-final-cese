@@ -26,6 +26,7 @@
 #include "app_user.h"
 #include "app_din.h"
 #include "app_dout.h"
+#include "app_rs485.h"
 #include "app_diagnostics.h"
 
 /* USER CODE END Includes */
@@ -84,6 +85,13 @@ const osThreadAttr_t diagnosticsTask_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
   .stack_size = 128 * 4
 };
+/* Definitions for rs485Task */
+osThreadId_t rs485TaskHandle;
+const osThreadAttr_t rs485Task_attributes = {
+  .name = "rs485Task",
+  .priority = (osPriority_t) osPriorityNormal,
+  .stack_size = 128 * 4
+};
 /* Definitions for ioPortSpiMutex */
 osMutexId_t ioPortSpiMutexHandle;
 const osMutexAttr_t ioPortSpiMutex_attributes = {
@@ -109,6 +117,16 @@ osMessageQueueId_t outOutputQueueHandle;
 const osMessageQueueAttr_t outOutputQueue_attributes = {
   .name = "outOutputQueue"
 };
+/* Definitions for rs485InputQueue */
+osMessageQueueId_t rs485InputQueueHandle;
+const osMessageQueueAttr_t rs485InputQueue_attributes = {
+  .name = "rs485InputQueue"
+};
+/* Definitions for rs485OutputQueue */
+osMessageQueueId_t rs485OutputQueueHandle;
+const osMessageQueueAttr_t rs485OutputQueue_attributes = {
+  .name = "rs485OutputQueue"
+};
 /* Definitions for radioEvent */
 osEventFlagsId_t radioEventHandle;
 const osEventFlagsAttr_t radioEvent_attributes = {
@@ -128,6 +146,16 @@ const osEventFlagsAttr_t dinFault_attributes = {
 osEventFlagsId_t doutFaultHandle;
 const osEventFlagsAttr_t doutFault_attributes = {
   .name = "doutFault"
+};
+/* Definitions for rs485Event */
+osEventFlagsId_t rs485EventHandle;
+const osEventFlagsAttr_t rs485Event_attributes = {
+  .name = "rs485Event"
+};
+/* Definitions for rs485Fault */
+osEventFlagsId_t rs485FaultHandle;
+const osEventFlagsAttr_t rs485Fault_attributes = {
+  .name = "rs485Fault"
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -184,6 +212,10 @@ void MX_FREERTOS_Init(void) {
   radioOutputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &radioOutputQueue_attributes);
   /* creation of outOutputQueue */
   outOutputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &outOutputQueue_attributes);
+  /* creation of rs485InputQueue */
+  rs485InputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &rs485InputQueue_attributes);
+  /* creation of rs485OutputQueue */
+  rs485OutputQueueHandle = osMessageQueueNew (16, sizeof(uint8_t), &rs485OutputQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   if ((radioInputQueueHandle == NULL) ||
@@ -208,6 +240,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of diagnosticsTask */
   diagnosticsTaskHandle = osThreadNew(diagnosticsTask, NULL, &diagnosticsTask_attributes);
 
+  /* creation of rs485Task */
+  rs485TaskHandle = osThreadNew(rs485Task, NULL, &rs485Task_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   if ((radioTaskHandle == NULL) ||
       (userTaskHandle == NULL) ||
@@ -230,6 +265,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of doutFault */
   doutFaultHandle = osEventFlagsNew(&doutFault_attributes);
+
+  /* creation of rs485Event */
+  rs485EventHandle = osEventFlagsNew(&rs485Event_attributes);
+
+  /* creation of rs485Fault */
+  rs485FaultHandle = osEventFlagsNew(&rs485Fault_attributes);
 
   /* USER CODE BEGIN RTOS_EVENTS */
   if ((radioEventHandle == NULL) ||
@@ -257,7 +298,11 @@ void MX_FREERTOS_Init(void) {
 void radioTask(void *argument)
 {
   /* USER CODE BEGIN radioTask */
-  app_radio_task(argument);
+  //app_radio_task(argument);
+  for(;;)
+  {
+	  osDelay(1);
+  }
   /* USER CODE END radioTask */
 }
 
@@ -275,7 +320,11 @@ void radioTask(void *argument)
 void userTask(void *argument)
 {
   /* USER CODE BEGIN userTask */
-  app_user_task(argument);
+  //app_user_task(argument);
+  for(;;)
+  {
+	  osDelay(1);
+  }
   /* USER CODE END userTask */
 }
 
@@ -293,7 +342,11 @@ void userTask(void *argument)
 void dinTask(void *argument)
 {
   /* USER CODE BEGIN dinTask */
-  app_din_task(argument);
+  //app_din_task(argument);
+  for(;;)
+  {
+	  osDelay(1);
+  }
   /* USER CODE END dinTask */
 }
 
@@ -312,7 +365,11 @@ void doutTask(void *argument)
 {
   /* USER CODE BEGIN doutTask */
   /* Infinite loop */
-  app_dout_task(argument);
+  //app_dout_task(argument);
+  for(;;)
+  {
+	  osDelay(1);
+  }
   /* USER CODE END doutTask */
 }
 
@@ -332,8 +389,31 @@ void diagnosticsTask(void *argument)
 {
   /* USER CODE BEGIN diagnosticsTask */
   /* Infinite loop */
-  app_diagnostics_task(argument);
+  //app_diagnostics_task(argument);
+  for(;;)
+  {
+	  osDelay(1);
+  }
   /* USER CODE END diagnosticsTask */
+}
+
+/* USER CODE BEGIN Header_rs485Task */
+/**
+* @brief Function implementing the rs485Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_rs485Task */
+void rs485Task(void *argument)
+{
+  /* USER CODE BEGIN rs485Task */
+  /* Infinite loop */
+  app_rs485_task(argument);
+  for(;;)
+  {
+	  osDelay(1);
+  }
+  /* USER CODE END rs485Task */
 }
 
 /* Private application code --------------------------------------------------*/
