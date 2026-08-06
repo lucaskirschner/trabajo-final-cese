@@ -269,10 +269,31 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     /*
      * Echo the received byte.
      */
-    if (HAL_UART_Transmit(&huart7, &rs485_rx_byte,1u, 100u) != HAL_OK)
+    if (HAL_UART_Transmit_IT(&huart7, &rs485_rx_byte, 1u) != HAL_OK)
     {
       Error_Handler();
     }
+  }
+}
+
+/**
+  * @brief UART transmission-complete callback.
+  *
+  * @param huart UART handle associated with the completed transmission.
+  *
+  * @details
+  * When transmission through UART7 completes, this callback reports the
+  * transmitted byte through SWO, returns the RS485 transceiver to receive mode
+  * and starts reception of the next byte.
+  */
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if (huart->Instance == UART7)
+  {
+	/*
+	 * Report received byte through SWO.
+	 */
+	printf("[RS485] TX complete: 0x%02X ('%c')\r\n", rs485_rx_byte, rs485_rx_byte);
 
     /*
      * Return RS485 transceiver to receive mode:
@@ -286,6 +307,43 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
      * Arm reception of the next byte.
      */
     if (HAL_UART_Receive_IT(&huart7, &rs485_rx_byte, 1u) != HAL_OK)
+    {
+      Error_Handler();
+    }
+  }
+}
+
+/**
+  * @brief UART error callback.
+  *
+  * @param huart UART handle associated with the detected error.
+  *
+  * @details
+  * This callback reports UART7 errors through SWO, returns the transceiver to
+  * receive mode and attempts to restart interrupt-driven reception.
+  */
+void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
+{
+  uint32_t error_code;
+
+  if (huart->Instance == UART7)
+  {
+    error_code = HAL_UART_GetError(huart);
+    printf("[RS485] UART error: 0x%08lX\r\n", (unsigned long)error_code);
+
+    /*
+     * Restore receive mode.
+     */
+    HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_RESET);
+
+    HAL_GPIO_WritePin(RS485_RE_GPIO_Port, RS485_RE_Pin, GPIO_PIN_RESET);
+
+    /*
+     * Abort the current UART operation before restarting reception.
+     */
+    (void)HAL_UART_Abort(&huart7);
+
+    if (HAL_UART_Receive_IT(&huart7,&rs485_rx_byte,1u) != HAL_OK)
     {
       Error_Handler();
     }
