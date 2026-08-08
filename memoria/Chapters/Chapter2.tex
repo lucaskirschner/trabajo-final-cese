@@ -13,7 +13,7 @@ El STM32H563RI se basa en una arquitectura ARM Cortex-M33 de 32 bits \cite{Corte
 
 El microcontrolador dispone de memoria Flash integrada y memoria SRAM (\textit{Static Random Access Memory}, memoria estática de acceso aleatorio) interna, además de una amplia variedad de periféricos de comunicación y control \cite{STM32H563}. Entre los periféricos utilizados durante el desarrollo se encuentran interfaces SPI (\textit{Serial Peripheral Interface}, interfaz periférica serie), UART (\textit{Universal Asynchronous Receiver-Transmitter}, transmisor-receptor asíncrono universal) y Ethernet MAC (\textit{Media Access Control}, control de acceso al medio).
 
-La selección de este microcontrolador también se fundamentó en la disponibilidad de herramientas de desarrollo y middleware provistos por STMicroelectronics, incluyendo STM32CubeIDE \cite{stm32cubeide}, bibliotecas HAL (\textit{Hardware Abstraction Layer}, capa de abstracción de hardware) \cite{hal} y soporte para sistemas operativos de tiempo real como FreeRTOS \cite{freertos}. Estas herramientas simplificaron significativamente el desarrollo, depuración y mantenimiento del firmware del sistema.
+La selección de este microcontrolador también se fundamentó en la disponibilidad de herramientas de desarrollo y middleware provistos por STMicroelectronics, incluido STM32CubeIDE \cite{stm32cubeide}, bibliotecas HAL (\textit{Hardware Abstraction Layer}, capa de abstracción de hardware) \cite{hal} y soporte para sistemas operativos de tiempo real como FreeRTOS \cite{freertos}. Estas herramientas simplificaron significativamente el desarrollo, depuración y mantenimiento del firmware del sistema.
 
 %----------------------------------------------------------------------------------------
 
@@ -25,7 +25,7 @@ Complementariamente a la plataforma de procesamiento basada en el STM32H\-563RI,
 
 El SCLT3-8BT8 de STMicroelectronics es una interfaz de entradas digitales industriales de ocho canales con transferencia serializada de estados mediante interfaz SPI \cite{sclt38bt8}. El dispositivo está orientado a aplicaciones de automatización industrial y PLC. Además, proporciona adaptación y protección para señales de 24 V provenientes de sensores y dispositivos industriales.
 
-El circuito incorpora protección contra sobretensiones y compatibilidad con estándares industriales de inmunidad electromagnética, incluyendo IEC61000-4-2, IEC61000-4-4 e IEC61000-4-5. Además, dispone de indicadores de estado integrados y mecanismos de diagnóstico para detección de fallas en las entradas.
+El circuito incorpora protección contra sobretensiones y compatibilidad con estándares industriales de inmunidad electromagnética, incluida IEC61000-4-2, IEC\-61000-4-4 e IEC61000-4-5. Además, dispone de indicadores de estado integrados y mecanismos de diagnóstico para detección de fallas en las entradas.
 
 \subsection{VNI8200XP-32}
 
@@ -49,7 +49,7 @@ El componente incorpora las capas PHY y MAC, además de mecanismos de cifrado AE
 
 El LAN8742A de Microchip es un transceptor Ethernet PHY compatible con Ethernet 10BASE-T y 100BASE-TX \cite{lan8742a}. El dispositivo se comunica con el microcontrolador mediante interfaz RMII (\textit{Reduced Media Independent Interface}, interfaz independiente del medio reducida), lo que permite implementar conectividad Ethernet de bajo número de pines.
 
-El componente incorpora soporte para auto-negociación, detección automática de polaridad y tecnología HP Auto-MDIX (\textit{Automatic Medium-Dependent Interface Crossover}, cruce automático de interfaz dependiente del medio), característica que permite utilizar cables directos o cruzados.
+El componente incorpora soporte para autonegociación, detección automática de polaridad y tecnología HP Auto-MDIX (\textit{Automatic Medium-Dependent Interface Crossover}, cruce automático de interfaz dependiente del medio), característica que permite utilizar cables directos o cruzados.
 
 \subsection{Convertidor CC/CC aislado de 5 V}
 
