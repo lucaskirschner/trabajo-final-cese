@@ -31,9 +31,13 @@
  * @details
  * This module implements the diagnostics application task.
  *
- * The task monitors independent fault event objects for the digital input,
- * digital output and radio application layers and reports each detected
+ * The task monitors independent fault event objects for the digital-output,
+ * digital-input, radio and RS485 application layers and reports each detected
  * condition through printf().
+ *
+ * Fault events are generated asynchronously by the corresponding application
+ * modules and remain separated from the internal event objects used to wake
+ * their service tasks.
  *
  * @ingroup app_diagnostics
  * @{
@@ -42,9 +46,11 @@
 /* ============================= Includes ================================== */
 
 #include "app_diagnostics.h"
+
 #include "app_dout.h"
 #include "app_din.h"
 #include "app_radio.h"
+#include "app_rs485.h"
 
 #include "cmsis_os2.h"
 
@@ -53,19 +59,44 @@
 
 /* ======================= External RTOS Objects ============================ */
 
+/**
+ * @brief Digital-output application fault event object.
+ */
 extern osEventFlagsId_t doutFaultHandle;
+
+/**
+ * @brief Digital-input application fault event object.
+ */
 extern osEventFlagsId_t dinFaultHandle;
+
+/**
+ * @brief Radio application fault event object.
+ */
 extern osEventFlagsId_t radioFaultHandle;
+
+/**
+ * @brief RS485 application fault event object.
+ */
+extern osEventFlagsId_t rs485FaultHandle;
 
 /* ========================== Private Prototypes =========================== */
 
-static void app_diagnostics_print_dout_faults(uint32_t flags);
-static void app_diagnostics_print_din_faults(uint32_t flags);
-static void app_diagnostics_print_radio_faults(uint32_t flags);
+static void app_diagnostics_print_dout_faults(
+    uint32_t flags);
+
+static void app_diagnostics_print_din_faults(
+    uint32_t flags);
+
+static void app_diagnostics_print_radio_faults(
+    uint32_t flags);
+
+static void app_diagnostics_print_rs485_faults(
+    uint32_t flags);
 
 /* ===================== Public Function Definitions ======================= */
 
-void app_diagnostics_task(void * argument)
+void app_diagnostics_task(
+    void * argument)
 {
     uint32_t flags;
 
@@ -73,34 +104,64 @@ void app_diagnostics_task(void * argument)
 
     for (;;)
     {
-        flags = osEventFlagsWait(doutFaultHandle,
-                                 APP_DOUT_FAULT_ERROR_MASK,
-                                 osFlagsWaitAny,
-                                 100U);
+        /*
+         * Check digital-output application faults.
+         */
+        flags = osEventFlagsWait(
+            doutFaultHandle,
+            APP_DOUT_FAULT_ERROR_MASK,
+            osFlagsWaitAny,
+            100U);
 
         if ((flags & osFlagsError) == 0U)
         {
-            app_diagnostics_print_dout_faults(flags);
+            app_diagnostics_print_dout_faults(
+                flags);
         }
 
-        flags = osEventFlagsWait(dinFaultHandle,
-                                 APP_DIN_FAULT_ERROR_MASK,
-                                 osFlagsWaitAny,
-                                 100U);
+        /*
+         * Check digital-input application faults.
+         */
+        flags = osEventFlagsWait(
+            dinFaultHandle,
+            APP_DIN_FAULT_ERROR_MASK,
+            osFlagsWaitAny,
+            100U);
 
         if ((flags & osFlagsError) == 0U)
         {
-            app_diagnostics_print_din_faults(flags);
+            app_diagnostics_print_din_faults(
+                flags);
         }
 
-        flags = osEventFlagsWait(radioFaultHandle,
-                                 APP_RADIO_FAULT_ERROR_MASK,
-                                 osFlagsWaitAny,
-                                 100U);
+        /*
+         * Check radio application faults.
+         */
+        flags = osEventFlagsWait(
+            radioFaultHandle,
+            APP_RADIO_FAULT_ERROR_MASK,
+            osFlagsWaitAny,
+            100U);
 
         if ((flags & osFlagsError) == 0U)
         {
-            app_diagnostics_print_radio_faults(flags);
+            app_diagnostics_print_radio_faults(
+                flags);
+        }
+
+        /*
+         * Check RS485 application faults.
+         */
+        flags = osEventFlagsWait(
+            rs485FaultHandle,
+            APP_RS485_FAULT_ERROR_MASK,
+            osFlagsWaitAny,
+            100U);
+
+        if ((flags & osFlagsError) == 0U)
+        {
+            app_diagnostics_print_rs485_faults(
+                flags);
         }
     }
 }
@@ -112,66 +173,79 @@ void app_diagnostics_task(void * argument)
  *
  * @param flags Event flags returned by the digital-output fault event object.
  */
-static void app_diagnostics_print_dout_faults(uint32_t flags)
+static void app_diagnostics_print_dout_faults(
+    uint32_t flags)
 {
     if ((flags & APP_DOUT_FAULT_RX_PARITY_ERROR) != 0u)
     {
-        printf("[DOUT] RX parity error\r\n");
+        printf(
+            "[DOUT] RX parity error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_SPI_ERROR) != 0u)
     {
-        printf("[DOUT] SPI communication error\r\n");
+        printf(
+            "[DOUT] SPI communication error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_FB_ERROR) != 0u)
     {
-        printf("[DOUT] DC-DC feedback error\r\n");
+        printf(
+            "[DOUT] DC-DC feedback error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_TWARN) != 0u)
     {
-        printf("[DOUT] Temperature warning\r\n");
+        printf(
+            "[DOUT] Temperature warning\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_PG_ERROR) != 0u)
     {
-        printf("[DOUT] Power Good error\r\n");
+        printf(
+            "[DOUT] Power Good error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_OVT_ERROR) != 0u)
     {
-        printf("[DOUT] Channel overtemperature error\r\n");
+        printf(
+            "[DOUT] Channel overtemperature error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_HW_ERROR) != 0u)
     {
-        printf("[DOUT] Hardware error\r\n");
+        printf(
+            "[DOUT] Hardware error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_TIMEOUT) != 0u)
     {
-        printf("[DOUT] Timeout error\r\n");
+        printf(
+            "[DOUT] Timeout error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_PARAM_ERROR) != 0u)
     {
-        printf("[DOUT] Parameter error\r\n");
+        printf(
+            "[DOUT] Parameter error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_NULL_ERROR) != 0u)
     {
-        printf("[DOUT] Null pointer error\r\n");
+        printf(
+            "[DOUT] Null pointer error\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_QUEUE_FULL) != 0u)
     {
-        printf("[DOUT] Output queue full\r\n");
+        printf(
+            "[DOUT] Output queue full\r\n");
     }
 
     if ((flags & APP_DOUT_FAULT_OS_ERROR) != 0u)
     {
-        printf("[DOUT] RTOS error\r\n");
+        printf(
+            "[DOUT] RTOS error\r\n");
     }
 }
 
@@ -180,56 +254,67 @@ static void app_diagnostics_print_dout_faults(uint32_t flags)
  *
  * @param flags Event flags returned by the digital-input fault event object.
  */
-static void app_diagnostics_print_din_faults(uint32_t flags)
+static void app_diagnostics_print_din_faults(
+    uint32_t flags)
 {
     if ((flags & APP_DIN_FAULT_STOP_BITS_ERROR) != 0u)
     {
-        printf("[DIN] Stop bits error\r\n");
+        printf(
+            "[DIN] Stop bits error\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_PARITY_ERROR) != 0u)
     {
-        printf("[DIN] Parity error\r\n");
+        printf(
+            "[DIN] Parity error\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_UV_ERROR) != 0u)
     {
-        printf("[DIN] Undervoltage alarm\r\n");
+        printf(
+            "[DIN] Undervoltage alarm\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_OT_ERROR) != 0u)
     {
-        printf("[DIN] Overtemperature alarm\r\n");
+        printf(
+            "[DIN] Overtemperature alarm\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_POWER_LOSS) != 0u)
     {
-        printf("[DIN] Power loss detected\r\n");
+        printf(
+            "[DIN] Power loss detected\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_HW_ERROR) != 0u)
     {
-        printf("[DIN] Hardware error\r\n");
+        printf(
+            "[DIN] Hardware error\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_TIMEOUT) != 0u)
     {
-        printf("[DIN] Timeout error\r\n");
+        printf(
+            "[DIN] Timeout error\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_PARAM_ERROR) != 0u)
     {
-        printf("[DIN] Parameter error\r\n");
+        printf(
+            "[DIN] Parameter error\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_NULL_ERROR) != 0u)
     {
-        printf("[DIN] Null pointer error\r\n");
+        printf(
+            "[DIN] Null pointer error\r\n");
     }
 
     if ((flags & APP_DIN_FAULT_OS_ERROR) != 0u)
     {
-        printf("[DIN] RTOS error\r\n");
+        printf(
+            "[DIN] RTOS error\r\n");
     }
 }
 
@@ -238,51 +323,128 @@ static void app_diagnostics_print_din_faults(uint32_t flags)
  *
  * @param flags Event flags returned by the radio fault event object.
  */
-static void app_diagnostics_print_radio_faults(uint32_t flags)
+static void app_diagnostics_print_radio_faults(
+    uint32_t flags)
 {
     if ((flags & APP_RADIO_FAULT_HW_ERROR) != 0u)
     {
-        printf("[RADIO] Hardware error\r\n");
+        printf(
+            "[RADIO] Hardware error\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_TIMEOUT) != 0u)
     {
-        printf("[RADIO] Timeout error\r\n");
+        printf(
+            "[RADIO] Timeout error\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_PARAM_ERROR) != 0u)
     {
-        printf("[RADIO] Parameter error\r\n");
+        printf(
+            "[RADIO] Parameter error\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_NULL_ERROR) != 0u)
     {
-        printf("[RADIO] Null pointer error\r\n");
+        printf(
+            "[RADIO] Null pointer error\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_FRAME_ERROR) != 0u)
     {
-        printf("[RADIO] Frame error\r\n");
+        printf(
+            "[RADIO] Frame error\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_STATE_ERROR) != 0u)
     {
-        printf("[RADIO] State error\r\n");
+        printf(
+            "[RADIO] State error\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_RX_QUEUE_FULL) != 0u)
     {
-        printf("[RADIO] RX queue full\r\n");
+        printf(
+            "[RADIO] RX queue full\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_TX_QUEUE_FULL) != 0u)
     {
-        printf("[RADIO] TX queue full\r\n");
+        printf(
+            "[RADIO] TX queue full\r\n");
     }
 
     if ((flags & APP_RADIO_FAULT_OS_ERROR) != 0u)
     {
-        printf("[RADIO] RTOS error\r\n");
+        printf(
+            "[RADIO] RTOS error\r\n");
+    }
+}
+
+/**
+ * @brief Print RS485 fault events.
+ *
+ * @param flags Event flags returned by the RS485 fault event object.
+ *
+ * @details
+ * Reports deferred initialization, driver, communication, queue and RTOS
+ * faults generated by the RS485 application service.
+ */
+static void app_diagnostics_print_rs485_faults(
+    uint32_t flags)
+{
+    if ((flags & APP_RS485_FAULT_INIT_ERROR) != 0u)
+    {
+        printf(
+            "[RS485] Initialization error\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_NULL_ERROR) != 0u)
+    {
+        printf(
+            "[RS485] Null pointer error\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_PARAM_ERROR) != 0u)
+    {
+        printf(
+            "[RS485] Parameter error\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_STATE_ERROR) != 0u)
+    {
+        printf(
+            "[RS485] State error\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_TIMEOUT) != 0u)
+    {
+        printf(
+            "[RS485] Timeout error\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_HW_ERROR) != 0u)
+    {
+        printf(
+            "[RS485] Hardware communication error\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_RX_QUEUE_FULL) != 0u)
+    {
+        printf(
+            "[RS485] RX queue full\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_TX_QUEUE_FULL) != 0u)
+    {
+        printf(
+            "[RS485] TX queue full\r\n");
+    }
+
+    if ((flags & APP_RS485_FAULT_OS_ERROR) != 0u)
+    {
+        printf(
+            "[RS485] RTOS error\r\n");
     }
 }
 

@@ -55,7 +55,7 @@ osThreadId_t radioTaskHandle;
 const osThreadAttr_t radioTask_attributes = {
   .name = "radioTask",
   .priority = (osPriority_t) osPriorityNormal,
-  .stack_size = 1024 * 4
+  .stack_size = 512 * 4
 };
 /* Definitions for userTask */
 osThreadId_t userTaskHandle;
@@ -220,9 +220,11 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_QUEUES */
   if ((radioInputQueueHandle == NULL) ||
       (radioOutputQueueHandle == NULL) ||
-      (outOutputQueueHandle == NULL))
+      (outOutputQueueHandle == NULL) ||
+      (rs485InputQueueHandle == NULL) ||
+      (rs485OutputQueueHandle == NULL))
   {
-    Error_Handler();
+      Error_Handler();
   }
   /* USER CODE END RTOS_QUEUES */
   /* creation of radioTask */
@@ -248,9 +250,10 @@ void MX_FREERTOS_Init(void) {
       (userTaskHandle == NULL) ||
       (dinTaskHandle == NULL) ||
       (doutTaskHandle == NULL) ||
-      (diagnosticsTaskHandle == NULL))
+      (diagnosticsTaskHandle == NULL) ||
+      (rs485TaskHandle == NULL))
   {
-    Error_Handler();
+      Error_Handler();
   }
   /* USER CODE END RTOS_THREADS */
 
@@ -276,9 +279,11 @@ void MX_FREERTOS_Init(void) {
   if ((radioEventHandle == NULL) ||
       (radioFaultHandle == NULL) ||
       (dinFaultHandle == NULL) ||
-      (doutFaultHandle == NULL))
+      (doutFaultHandle == NULL) ||
+      (rs485EventHandle == NULL) ||
+      (rs485FaultHandle == NULL))
   {
-    Error_Handler();
+      Error_Handler();
   }
   /* USER CODE END RTOS_EVENTS */
 
@@ -298,7 +303,7 @@ void MX_FREERTOS_Init(void) {
 void radioTask(void *argument)
 {
   /* USER CODE BEGIN radioTask */
-  //app_radio_task(argument);
+  app_radio_task(argument);
   for(;;)
   {
 	  osDelay(1);
@@ -320,7 +325,7 @@ void radioTask(void *argument)
 void userTask(void *argument)
 {
   /* USER CODE BEGIN userTask */
-  //app_user_task(argument);
+  app_user_task(argument);
   for(;;)
   {
 	  osDelay(1);
@@ -342,7 +347,7 @@ void userTask(void *argument)
 void dinTask(void *argument)
 {
   /* USER CODE BEGIN dinTask */
-  //app_din_task(argument);
+  app_din_task(argument);
   for(;;)
   {
 	  osDelay(1);
@@ -365,7 +370,7 @@ void doutTask(void *argument)
 {
   /* USER CODE BEGIN doutTask */
   /* Infinite loop */
-  //app_dout_task(argument);
+  app_dout_task(argument);
   for(;;)
   {
 	  osDelay(1);
@@ -389,7 +394,7 @@ void diagnosticsTask(void *argument)
 {
   /* USER CODE BEGIN diagnosticsTask */
   /* Infinite loop */
-  //app_diagnostics_task(argument);
+  app_diagnostics_task(argument);
   for(;;)
   {
 	  osDelay(1);

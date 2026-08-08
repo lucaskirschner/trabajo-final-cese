@@ -25,54 +25,82 @@
 /**
  * @file    rs485.c
  * @author  Lucas Kirschner <kirschnerlucas1@gmail.com>
- * @date    2026-08-04
+ * @date    2026-08-08
  * @brief   Interrupt-driven single-byte RS485 driver implementation.
  *
  * @details
- * This module implements a minimal single-byte communication mechanism over
- * the RS485 port layer.
+ * This module implements a minimal half-duplex RS485 communication mechanism
+ * using the hardware-independent services exposed by rs485_port.
  *
- * It is intended for functional validation of the UART and RS485 transceiver
- * using a conventional serial terminal such as PuTTY.
+ * Each communication operation handles exactly one byte.
  *
- * Unlike the previous framed implementation, this version does not use:
+ * Transmission flow:
  *
- * - Start-of-frame markers.
- * - Protocol commands.
- * - Checksums.
- * - Multi-byte frames.
+ * @code
+ * rs485_send()
+ *      |
+ *      v
+ * RS485_PORT_MODE_TX
+ *      |
+ *      v
+ * rs485_port_transmit_it()
+ *      |
+ *      v
+ * HAL_UART_TxCpltCallback()
+ *      |
+ *      v
+ * rs485_port_tx_complete_callback()
+ *      |
+ *      v
+ * RS485_PORT_MODE_RX
+ *      |
+ *      v
+ * rs485_tx_complete_callback()
+ * @endcode
  *
- * Each receive operation waits for exactly one byte:
+ * Reception flow:
  *
  * @code
  * rs485_receive_start()
- *          |
- *          v
- * rs485_port_receive_it(..., 1)
- *          |
- *          v
+ *      |
+ *      v
+ * RS485_PORT_MODE_RX
+ *      |
+ *      v
+ * rs485_port_receive_it()
+ *      |
+ *      v
  * HAL_UART_RxCpltCallback()
- *          |
- *          v
+ *      |
+ *      v
  * rs485_port_rx_complete_callback()
- *          |
- *          v
+ *      |
+ *      v
+ * rs485_rx_complete_callback()
+ *      |
+ *      v
  * rs485_receive()
  * @endcode
  *
- * Transmission remains blocking. Reception is interrupt-driven.
+ * The transmit and receive bytes are stored in persistent driver context
+ * because interrupt-driven UART operations continue after their initiating
+ * functions have returned.
  *
- * For an echo test, the upper application calls rs485_process_echo() after the
- * reception-complete notification. The received byte is then transmitted back
- * without modification.
+ * Only one communication operation may be active at a time.
  *
- * The port notification hooks are implemented by this module. They update the
- * internal driver state and invoke application-level notification callbacks.
+ * The driver does not implement:
  *
- * The application callbacks execute in interrupt context and must remain short
- * and ISR-safe.
+ * - Message framing.
+ * - Addressing.
+ * - Checksums or CRC.
+ * - Protocol commands.
+ * - Retransmissions.
+ * - Queues.
+ * - RTOS synchronization.
  *
- * This module does not use DMA, dynamic memory or RTOS services.
+ * These responsibilities belong to upper software layers.
+ *
+ * This module does not use DMA or dynamic memory.
  *
  * @ingroup rs485
  * @{
@@ -91,14 +119,14 @@
 /* ============================ Local Macros =============================== */
 
 /**
- * @brief Number of bytes requested by each interrupt-driven reception.
- */
-#define RS485_RX_SIZE                       ((uint16_t)1u)
-
-/**
- * @brief Number of bytes transmitted by rs485_send().
+ * @brief Number of bytes handled by each transmission operation.
  */
 #define RS485_TX_SIZE                       ((uint16_t)1u)
+
+/**
+ * @brief Number of bytes handled by each reception operation.
+ */
+#define RS485_RX_SIZE                       ((uint16_t)1u)
 
 /* ============================ Local Types ================================ */
 
@@ -107,28 +135,61 @@
  */
 typedef struct
 {
+    /**
+     * @brief Indicates whether the RS485 driver has been initialized.
+     */
     bool initialized;
 
+    /**
+     * @brief Indicates that an interrupt-driven reception is active.
+     */
     volatile bool rx_active;
-    volatile bool rx_complete;
-    volatile bool rx_error;
 
+    /**
+     * @brief Indicates that a received byte is available for consumption.
+     */
+    volatile bool rx_complete;
+
+    /**
+     * @brief Indicates that an interrupt-driven transmission is active.
+     */
+    volatile bool tx_active;
+
+    /**
+     * @brief Last UART error flags reported by the port layer.
+     */
     volatile uint32_t last_uart_error;
 
+    /**
+     * @brief Persistent storage for the received byte.
+     */
     uint8_t rx_data;
 
+    /**
+     * @brief Persistent storage for the transmitted byte.
+     */
+    uint8_t tx_data;
+
+    /**
+     * @brief Handle associated with the underlying RS485 port layer.
+     */
     rs485_port_handle_t port_handle;
+
 } rs485_ctx_t;
 
 /* ======================= Local Static Data ================================ */
 
+/**
+ * @brief Internal RS485 driver context.
+ */
 static rs485_ctx_t g_ctx = {
     .initialized = false,
     .rx_active = false,
     .rx_complete = false,
-    .rx_error = false,
+    .tx_active = false,
     .last_uart_error = 0u,
     .rx_data = 0u,
+    .tx_data = 0u,
     .port_handle = {
         .reserved = 0u
     }
@@ -142,27 +203,45 @@ static rs485_status_t rs485_validate_handle(
 static rs485_status_t rs485_port_status_to_status(
     rs485_port_status_t port_status);
 
+static void rs485_clear_state(void);
+
 /* ===================== Port Notification Prototypes ====================== */
 
 /**
- * @brief Receive-complete notification called by rs485_port.c.
+ * @brief Transmission-complete notification called by rs485_port.c.
  *
  * @details
  * This function overrides the weak notification hook provided by the RS485
  * port layer.
+ *
+ * It executes in interrupt context.
+ */
+void rs485_port_tx_complete_callback(void);
+
+/**
+ * @brief Reception-complete notification called by rs485_port.c.
+ *
+ * @details
+ * This function overrides the weak notification hook provided by the RS485
+ * port layer.
+ *
+ * It executes in interrupt context.
  */
 void rs485_port_rx_complete_callback(void);
 
 /**
  * @brief UART-error notification called by rs485_port.c.
  *
- * @param[in] error_code  STM32 HAL UART error flags.
+ * @param[in] error_code  UART error flags reported by the port layer.
  *
  * @details
  * This function overrides the weak notification hook provided by the RS485
  * port layer.
+ *
+ * It executes in interrupt context.
  */
-void rs485_port_error_callback(uint32_t error_code);
+void rs485_port_error_callback(
+    uint32_t error_code);
 
 /* ===================== Public Function Definitions ======================= */
 
@@ -172,7 +251,9 @@ rs485_status_t rs485_init(
     rs485_port_status_t port_status;
     rs485_status_t status;
 
-    status = rs485_validate_handle(handle);
+    status = rs485_validate_handle(
+        handle);
+
     if (status != RS485_OK)
     {
         return status;
@@ -194,6 +275,13 @@ rs485_status_t rs485_init(
         return status;
     }
 
+    /*
+     * Explicitly request the default receive state.
+     *
+     * rs485_port_init() already configures receive mode, but keeping the
+     * requested driver state explicit makes the ownership of the half-duplex
+     * communication policy clear at this layer.
+     */
     port_status = rs485_port_set_mode(
         RS485_PORT_MODE_RX);
 
@@ -208,11 +296,8 @@ rs485_status_t rs485_init(
         return status;
     }
 
-    g_ctx.rx_active = false;
-    g_ctx.rx_complete = false;
-    g_ctx.rx_error = false;
-    g_ctx.last_uart_error = 0u;
-    g_ctx.rx_data = 0u;
+    rs485_clear_state();
+
     g_ctx.initialized = true;
 
     return RS485_OK;
@@ -224,7 +309,9 @@ rs485_status_t rs485_deinit(
     rs485_port_status_t port_status;
     rs485_status_t status;
 
-    status = rs485_validate_handle(handle);
+    status = rs485_validate_handle(
+        handle);
+
     if (status != RS485_OK)
     {
         return status;
@@ -235,6 +322,9 @@ rs485_status_t rs485_deinit(
         return RS485_E_STATE;
     }
 
+    /*
+     * Abort any active receive operation before deinitializing the port.
+     */
     if (g_ctx.rx_active != false)
     {
         port_status = rs485_port_abort_receive();
@@ -246,8 +336,31 @@ rs485_status_t rs485_deinit(
         {
             return status;
         }
+
+        g_ctx.rx_active = false;
     }
 
+    /*
+     * Abort any active transmit operation before deinitializing the port.
+     */
+    if (g_ctx.tx_active != false)
+    {
+        port_status = rs485_port_abort_transmit();
+
+        status = rs485_port_status_to_status(
+            port_status);
+
+        if (status != RS485_OK)
+        {
+            return status;
+        }
+
+        g_ctx.tx_active = false;
+    }
+
+    /*
+     * Restore the external transceiver to the default receive state.
+     */
     port_status = rs485_port_set_mode(
         RS485_PORT_MODE_RX);
 
@@ -270,23 +383,18 @@ rs485_status_t rs485_deinit(
         return status;
     }
 
-    g_ctx.rx_active = false;
-    g_ctx.rx_complete = false;
-    g_ctx.rx_error = false;
-    g_ctx.last_uart_error = 0u;
-    g_ctx.rx_data = 0u;
+    rs485_clear_state();
+
     g_ctx.initialized = false;
 
     return RS485_OK;
 }
 
 rs485_status_t rs485_send(
-    uint8_t data,
-    uint32_t timeout_ms)
+    uint8_t data)
 {
     rs485_port_status_t port_status;
-    rs485_status_t transmit_status;
-    rs485_status_t restore_status;
+    rs485_status_t status;
 
     if (g_ctx.initialized == false)
     {
@@ -294,51 +402,65 @@ rs485_status_t rs485_send(
     }
 
     /*
-     * An active interrupt-driven receive operation must be completed or
-     * aborted before changing the half-duplex transceiver to transmit mode.
+     * Half-duplex communication permits only one operation at a time.
+     *
+     * An active reception must be completed or explicitly aborted by the
+     * upper layer before a transmission can start.
      */
-    if (g_ctx.rx_active != false)
+    if ((g_ctx.tx_active != false) ||
+        (g_ctx.rx_active != false))
     {
         return RS485_E_STATE;
     }
 
+    /*
+     * Preserve the byte in driver-owned storage.
+     *
+     * The interrupt-driven UART transmission continues after rs485_send()
+     * returns, so a local function parameter cannot be used directly as the
+     * HAL transmission buffer.
+     */
+    g_ctx.tx_data = data;
+    g_ctx.last_uart_error = 0u;
+
     port_status = rs485_port_set_mode(
         RS485_PORT_MODE_TX);
 
-    transmit_status = rs485_port_status_to_status(
+    status = rs485_port_status_to_status(
         port_status);
 
-    if (transmit_status != RS485_OK)
+    if (status != RS485_OK)
     {
-        return transmit_status;
+        return status;
     }
-
-    port_status = rs485_port_transmit(
-        &data,
-        RS485_TX_SIZE,
-        timeout_ms);
-
-    transmit_status = rs485_port_status_to_status(
-        port_status);
 
     /*
-     * Always attempt to return the transceiver to receive mode, even when the
-     * blocking transmission reports an error.
+     * Mark transmission active before requesting the lower-layer operation.
+     *
+     * This avoids a possible race in which a very short UART operation could
+     * complete and generate its interrupt before the driver state is updated.
      */
-    port_status = rs485_port_set_mode(
-        RS485_PORT_MODE_RX);
+    g_ctx.tx_active = true;
 
-    restore_status = rs485_port_status_to_status(
+    port_status = rs485_port_transmit_it(
+        &g_ctx.tx_data,
+        RS485_TX_SIZE);
+
+    status = rs485_port_status_to_status(
         port_status);
 
-    if (transmit_status != RS485_OK)
+    if (status != RS485_OK)
     {
-        return transmit_status;
-    }
+        g_ctx.tx_active = false;
 
-    if (restore_status != RS485_OK)
-    {
-        return restore_status;
+        /*
+         * Transmission could not be started. Restore the default receive
+         * state before returning the failure to the caller.
+         */
+        (void)rs485_port_set_mode(
+            RS485_PORT_MODE_RX);
+
+        return status;
     }
 
     return RS485_OK;
@@ -355,10 +477,13 @@ rs485_status_t rs485_receive_start(void)
     }
 
     /*
-     * A new reception cannot be started while another reception is active or
-     * while a previously received byte remains unconsumed.
+     * A reception cannot be started while another operation is active.
+     *
+     * A new reception is also rejected while a previously received byte
+     * remains unconsumed.
      */
     if ((g_ctx.rx_active != false) ||
+        (g_ctx.tx_active != false) ||
         (g_ctx.rx_complete != false))
     {
         return RS485_E_STATE;
@@ -375,9 +500,14 @@ rs485_status_t rs485_receive_start(void)
         return status;
     }
 
-    g_ctx.rx_error = false;
-    g_ctx.last_uart_error = 0u;
     g_ctx.rx_data = 0u;
+    g_ctx.last_uart_error = 0u;
+
+    /*
+     * Mark reception active before starting the lower-layer UART operation to
+     * avoid a possible state race with the completion interrupt.
+     */
+    g_ctx.rx_active = true;
 
     port_status = rs485_port_receive_it(
         &g_ctx.rx_data,
@@ -386,12 +516,14 @@ rs485_status_t rs485_receive_start(void)
     status = rs485_port_status_to_status(
         port_status);
 
-    if (status == RS485_OK)
+    if (status != RS485_OK)
     {
-        g_ctx.rx_active = true;
+        g_ctx.rx_active = false;
+
+        return status;
     }
 
-    return status;
+    return RS485_OK;
 }
 
 rs485_status_t rs485_receive(
@@ -407,16 +539,6 @@ rs485_status_t rs485_receive(
         return RS485_E_STATE;
     }
 
-    if (g_ctx.rx_error != false)
-    {
-        g_ctx.rx_error = false;
-        g_ctx.rx_complete = false;
-        g_ctx.last_uart_error = 0u;
-        g_ctx.rx_data = 0u;
-
-        return RS485_E_HW;
-    }
-
     if (g_ctx.rx_complete == false)
     {
         return RS485_E_STATE;
@@ -425,8 +547,8 @@ rs485_status_t rs485_receive(
     *p_data = g_ctx.rx_data;
 
     /*
-     * Mark the received byte as consumed. The upper application may now call
-     * rs485_receive_start() to arm the next reception.
+     * Mark the received byte as consumed. A new interrupt-driven reception may
+     * now be armed through rs485_receive_start().
      */
     g_ctx.rx_complete = false;
     g_ctx.rx_data = 0u;
@@ -459,53 +581,96 @@ rs485_status_t rs485_receive_abort(void)
 
     g_ctx.rx_active = false;
     g_ctx.rx_complete = false;
-    g_ctx.rx_error = false;
-    g_ctx.last_uart_error = 0u;
     g_ctx.rx_data = 0u;
+    g_ctx.last_uart_error = 0u;
 
-    return RS485_OK;
+    port_status = rs485_port_set_mode(
+        RS485_PORT_MODE_RX);
+
+    return rs485_port_status_to_status(
+        port_status);
 }
 
-rs485_status_t rs485_process_echo(
-    uint8_t * p_data,
-    uint32_t timeout_ms)
+rs485_status_t rs485_transmit_abort(void)
 {
-    uint8_t received_data;
+    rs485_port_status_t port_status;
     rs485_status_t status;
 
-    status = rs485_receive(
-        &received_data);
-
-    if (status != RS485_OK)
+    if (g_ctx.initialized == false)
     {
-        return status;
+        return RS485_E_STATE;
     }
 
-    status = rs485_send(
-        received_data,
-        timeout_ms);
-
-    if (status != RS485_OK)
+    if (g_ctx.tx_active != false)
     {
-        return status;
+        port_status = rs485_port_abort_transmit();
+
+        status = rs485_port_status_to_status(
+            port_status);
+
+        if (status != RS485_OK)
+        {
+            return status;
+        }
     }
 
-    if (p_data != NULL)
-    {
-        *p_data = received_data;
-    }
+    g_ctx.tx_active = false;
+    g_ctx.tx_data = 0u;
+    g_ctx.last_uart_error = 0u;
 
-    return RS485_OK;
+    /*
+     * An aborted transmission must always leave the half-duplex transceiver in
+     * receive mode.
+     */
+    port_status = rs485_port_set_mode(
+        RS485_PORT_MODE_RX);
+
+    return rs485_port_status_to_status(
+        port_status);
 }
 
 /* ===================== Port Notification Definitions ===================== */
 
 /**
+ * @brief Handle completion of the UART transmission started by the port layer.
+ *
+ * @details
+ * This function executes in interrupt context.
+ *
+ * It clears the active transmission state, restores the half-duplex
+ * transceiver to receive mode and propagates the completion notification to
+ * the upper application layer.
+ */
+void rs485_port_tx_complete_callback(void)
+{
+    if (g_ctx.initialized != false)
+    {
+        g_ctx.tx_active = false;
+        g_ctx.last_uart_error = 0u;
+
+        /*
+         * Transmission has physically completed. Release the RS485 bus and
+         * enable the receiver again.
+         */
+        (void)rs485_port_set_mode(
+            RS485_PORT_MODE_RX);
+
+        rs485_tx_complete_callback(
+            g_ctx.tx_data);
+    }
+}
+
+/**
  * @brief Handle completion of the UART reception started by the port layer.
  *
  * @details
- * This function executes in interrupt context. It updates only volatile state
- * flags and invokes the application-level receive-complete callback.
+ * This function executes in interrupt context.
+ *
+ * The received byte has already been written into g_ctx.rx_data by the UART
+ * interrupt-driven receive operation.
+ *
+ * The callback updates the driver state and notifies the upper application
+ * layer that the byte is ready to be consumed.
  */
 void rs485_port_rx_complete_callback(void)
 {
@@ -513,7 +678,6 @@ void rs485_port_rx_complete_callback(void)
     {
         g_ctx.rx_active = false;
         g_ctx.rx_complete = true;
-        g_ctx.rx_error = false;
         g_ctx.last_uart_error = 0u;
 
         rs485_rx_complete_callback();
@@ -521,13 +685,16 @@ void rs485_port_rx_complete_callback(void)
 }
 
 /**
- * @brief Handle a UART reception error reported by the port layer.
+ * @brief Handle a UART communication error reported by the port layer.
  *
- * @param[in] error_code  STM32 HAL UART error flags.
+ * @param[in] error_code  UART error flags.
  *
  * @details
- * This function executes in interrupt context. It records the error, clears the
- * active reception state and invokes the application-level error callback.
+ * This function executes in interrupt context.
+ *
+ * Any active transmit or receive operation is considered terminated. Pending
+ * reception data is discarded and the RS485 transceiver is restored to receive
+ * mode before the error is propagated to the upper application layer.
  */
 void rs485_port_error_callback(
     uint32_t error_code)
@@ -536,12 +703,69 @@ void rs485_port_error_callback(
     {
         g_ctx.rx_active = false;
         g_ctx.rx_complete = false;
-        g_ctx.rx_error = true;
+        g_ctx.tx_active = false;
+
         g_ctx.last_uart_error = error_code;
+
+        g_ctx.rx_data = 0u;
+
+        /*
+         * Return the external half-duplex transceiver to its default idle
+         * state after any UART communication error.
+         */
+        (void)rs485_port_set_mode(
+            RS485_PORT_MODE_RX);
 
         rs485_error_callback(
             error_code);
     }
+}
+
+/* ================= Notification Hook Definitions ========================= */
+
+/**
+ * @brief Default transmission-complete notification hook.
+ *
+ * @param[in] data  Byte whose transmission has completed.
+ *
+ * @details
+ * This weak implementation intentionally performs no operation.
+ *
+ * The upper application layer may provide a strong definition.
+ */
+__attribute__((weak)) void rs485_tx_complete_callback(
+    uint8_t data)
+{
+    (void)data;
+}
+
+/**
+ * @brief Default reception-complete notification hook.
+ *
+ * @details
+ * This weak implementation intentionally performs no operation.
+ *
+ * The upper application layer may provide a strong definition.
+ */
+__attribute__((weak)) void rs485_rx_complete_callback(void)
+{
+    /* Upper-layer notification hook. */
+}
+
+/**
+ * @brief Default RS485 UART-error notification hook.
+ *
+ * @param[in] error_code  UART error flags.
+ *
+ * @details
+ * This weak implementation intentionally performs no operation.
+ *
+ * The upper application layer may provide a strong definition.
+ */
+__attribute__((weak)) void rs485_error_callback(
+    uint32_t error_code)
+{
+    (void)error_code;
 }
 
 /* ===================== Private Function Definitions ====================== */
@@ -551,7 +775,8 @@ void rs485_port_error_callback(
  *
  * @param[in] handle  RS485 driver handle.
  *
- * @return RS485_OK on success, error code otherwise.
+ * @return RS485_OK on success.
+ * @return RS485_E_NULL if handle is NULL.
  */
 static rs485_status_t rs485_validate_handle(
     const rs485_handle_t * handle)
@@ -579,32 +804,59 @@ static rs485_status_t rs485_port_status_to_status(
     switch (port_status)
     {
         case RS485_PORT_OK:
+
             status = RS485_OK;
             break;
 
         case RS485_PORT_E_NULL:
+
             status = RS485_E_NULL;
             break;
 
         case RS485_PORT_E_PARAM:
+
             status = RS485_E_PARAM;
             break;
 
         case RS485_PORT_E_STATE:
+
             status = RS485_E_STATE;
             break;
 
         case RS485_PORT_E_TIMEOUT:
+
             status = RS485_E_TIMEOUT;
             break;
 
         case RS485_PORT_E_HW:
         default:
+
             status = RS485_E_HW;
             break;
     }
 
     return status;
+}
+
+/**
+ * @brief Clear the internal RS485 communication state.
+ *
+ * @details
+ * Resets all transient communication flags and byte storage.
+ *
+ * This function does not modify the initialized state because initialization
+ * ownership remains with rs485_init() and rs485_deinit().
+ */
+static void rs485_clear_state(void)
+{
+    g_ctx.rx_active = false;
+    g_ctx.rx_complete = false;
+    g_ctx.tx_active = false;
+
+    g_ctx.last_uart_error = 0u;
+
+    g_ctx.rx_data = 0u;
+    g_ctx.tx_data = 0u;
 }
 
 /** @} */

@@ -25,43 +25,46 @@
 /**
  * @file    rs485.h
  * @author  Lucas Kirschner <kirschnerlucas1@gmail.com>
- * @date    2026-08-04
- * @brief   Interrupt-driven single-byte RS485 driver.
+ * @date    2026-08-08
+ * @brief   Interrupt-driven single-byte RS485 driver interface.
  *
  * @details
- * This module provides a minimal RS485 driver intended for functional
- * validation of the UART and RS485 transceiver using a conventional serial
- * terminal such as PuTTY.
+ * This module implements a minimal half-duplex RS485 communication driver
+ * based on the hardware-dependent services provided by rs485_port.
  *
- * The driver exchanges individual eight-bit data values without adding:
+ * Both transmission and reception are asynchronous and use interrupt-driven
+ * UART operations through the underlying port layer.
  *
+ * The driver handles one byte per operation and does not implement:
+ *
+ * - Message framing.
  * - Start-of-frame markers.
+ * - Device addressing.
+ * - Checksums or CRC.
  * - Protocol commands.
- * - Checksums.
- * - Multi-byte framing.
+ * - Automatic retransmission.
+ * - Multi-byte buffering.
  *
- * Transmission is blocking and sends exactly one byte.
+ * Transmission is started through rs485_send(). The function returns after the
+ * UART transfer has been successfully requested. Actual transmission completion
+ * is reported asynchronously through rs485_tx_complete_callback().
  *
- * Reception is interrupt-driven and follows three stages:
+ * Reception is armed through rs485_receive_start(). Once one byte has been
+ * received, rs485_rx_complete_callback() is invoked and the received value may
+ * be retrieved through rs485_receive().
  *
- * 1. rs485_receive_start() arms reception of one byte.
- * 2. The UART interrupt completes the reception and invokes the internal port
- *    notification hook.
- * 3. rs485_receive() obtains the completed byte from task context.
+ * The driver controls the half-duplex RS485 operating mode:
  *
- * The application layer must provide:
+ * - Before transmission, the transceiver is switched to transmit mode.
+ * - After transmission completes, the transceiver returns to receive mode.
+ * - Reception operations are performed with the transceiver in receive mode.
  *
- * - rs485_rx_complete_callback().
- * - rs485_error_callback().
+ * The application-level callbacks are weak by default and may be overridden
+ * by an upper application layer.
  *
- * These callbacks execute in interrupt context and must remain short and
- * ISR-safe. A typical RTOS application uses them only to set event flags and
- * defer all processing to a task.
+ * This module does not use DMA, dynamic memory or RTOS services.
  *
- * The driver does not depend on an RTOS, does not use DMA and is not
- * thread-safe. A single upper-level task should own all driver operations.
- *
- * @ingroup rs485
+ * @defgroup rs485 RS485 Driver
  * @{
  */
 
@@ -72,48 +75,50 @@
 
 #include <stdint.h>
 
-/* ============================== Types ==================================== */
+/* ============================ Public Types ================================ */
 
 /**
- * @brief Public status codes for the RS485 driver.
+ * @brief RS485 driver operation status.
  */
 typedef enum
 {
     RS485_OK = 0,
+
     RS485_E_NULL,
     RS485_E_PARAM,
     RS485_E_STATE,
-    RS485_E_HW,
-    RS485_E_TIMEOUT
+    RS485_E_TIMEOUT,
+    RS485_E_HW
+
 } rs485_status_t;
 
 /**
  * @brief Public RS485 driver handle.
+ *
+ * @details
+ * The current implementation supports a single RS485 interface.
+ *
+ * The reserved field keeps the public interface handle-based and allows future
+ * extensions without modifying the existing API.
  */
 typedef struct
 {
     uint32_t reserved;
+
 } rs485_handle_t;
 
-/* ===================== Public Function Prototypes ======================== */
+/* ===================== Public Function Prototypes ========================= */
 
 /**
  * @brief Initialize the RS485 driver.
  *
- * @param[in,out] handle  RS485 driver handle.
+ * @param[in,out] handle  Pointer to the RS485 driver handle.
  *
- * @return
- * - RS485_OK: Driver initialized successfully.
- * - RS485_E_NULL: @p handle is NULL.
- * - RS485_E_STATE: Driver is already initialized.
- * - Other status: Lower-layer initialization or direction-control error.
+ * @return RS485_OK on success, error code otherwise.
  *
  * @details
- * This function initializes the lower RS485 port layer, clears the internal
- * reception state and leaves the transceiver in receive mode.
- *
- * The function does not automatically start reception. The application must
- * subsequently call rs485_receive_start().
+ * Initializes the underlying RS485 port layer, clears the internal driver
+ * state and places the external transceiver in receive mode.
  */
 rs485_status_t rs485_init(
     rs485_handle_t * handle);
@@ -121,154 +126,160 @@ rs485_status_t rs485_init(
 /**
  * @brief Deinitialize the RS485 driver.
  *
- * @param[in,out] handle  RS485 driver handle.
+ * @param[in,out] handle  Pointer to the RS485 driver handle.
  *
- * @return
- * - RS485_OK: Driver deinitialized successfully.
- * - RS485_E_NULL: @p handle is NULL.
- * - RS485_E_STATE: Driver is not initialized.
- * - Other status: Lower-layer error.
+ * @return RS485_OK on success, error code otherwise.
  *
  * @details
- * Any active interrupt-driven reception is aborted before the lower RS485 port
- * layer is deinitialized.
+ * Aborts any active communication operation, restores receive mode and
+ * deinitializes the underlying RS485 port layer.
  */
 rs485_status_t rs485_deinit(
     rs485_handle_t * handle);
 
 /**
- * @brief Send one byte through the RS485 interface.
+ * @brief Start transmission of one RS485 byte.
  *
- * @param[in] data        Eight-bit value to transmit.
- * @param[in] timeout_ms  Blocking transmission timeout in milliseconds.
+ * @param[in] data  Byte to transmit.
  *
- * @return
- * - RS485_OK: Byte transmitted successfully.
- * - RS485_E_STATE: Driver is not initialized or reception is currently active.
- * - RS485_E_TIMEOUT: Blocking transmission timed out.
- * - RS485_E_HW: Lower-layer hardware error.
- * - Other status: Lower-layer parameter or state error.
+ * @return RS485_OK if transmission was started successfully.
+ * @return RS485_E_STATE if the driver is not initialized or another
+ *         communication operation is active.
+ * @return Other RS485 error code if the underlying port operation fails.
  *
  * @details
- * This function:
+ * The byte is copied into persistent driver storage before starting the
+ * interrupt-driven UART transmission.
  *
- * 1. Switches the transceiver to transmit mode.
- * 2. Sends exactly one byte.
- * 3. Restores receive mode before returning.
+ * This function is non-blocking. RS485_OK indicates that transmission was
+ * successfully started, not that the byte has already been transmitted.
  *
- * An active interrupt-driven reception must be completed or aborted before
- * this function is called.
+ * Actual completion is reported through rs485_tx_complete_callback().
  */
 rs485_status_t rs485_send(
-    uint8_t data,
-    uint32_t timeout_ms);
+    uint8_t data);
 
 /**
- * @brief Start interrupt-driven reception of one byte.
+ * @brief Start reception of one RS485 byte.
  *
- * @return
- * - RS485_OK: Reception started successfully.
- * - RS485_E_STATE: Driver is not initialized, reception is already active or a
- *   previously received byte has not yet been consumed.
- * - Other status: Lower-layer error.
+ * @return RS485_OK if reception was started successfully.
+ * @return RS485_E_STATE if the driver is not initialized, another operation is
+ *         active or a previously received byte has not yet been consumed.
+ * @return Other RS485 error code if the underlying port operation fails.
  *
  * @details
- * This function places the transceiver in receive mode and starts an
- * interrupt-driven UART reception of exactly one byte.
+ * Configures the transceiver for receive mode and starts an interrupt-driven
+ * one-byte UART reception.
  *
- * The function returns immediately. Completion is reported asynchronously
- * through rs485_rx_complete_callback().
+ * Actual completion is reported asynchronously through
+ * rs485_rx_complete_callback().
  */
 rs485_status_t rs485_receive_start(void);
 
 /**
- * @brief Obtain the byte completed by the interrupt-driven reception.
+ * @brief Retrieve the last completed RS485 byte reception.
  *
- * @param[out] p_data  Destination for the received byte.
+ * @param[out] p_data  Pointer where the received byte will be stored.
  *
- * @return
- * - RS485_OK: Byte obtained successfully.
- * - RS485_E_NULL: @p p_data is NULL.
- * - RS485_E_STATE: Driver is not initialized or no completed byte is available.
- * - RS485_E_HW: The most recent reception ended with a UART error.
+ * @return RS485_OK on success.
+ * @return RS485_E_NULL if p_data is NULL.
+ * @return RS485_E_STATE if the driver is not initialized or no received byte
+ *         is currently available.
  *
  * @details
- * This function does not wait for UART data. It must be called after the
- * receive-complete notification generated by rs485_rx_complete_callback().
+ * This function does not access the UART peripheral. It only returns the byte
+ * previously stored by the interrupt-driven reception.
  *
- * After the function returns successfully, the completed reception is consumed
- * and a new reception may be started with rs485_receive_start().
+ * Once successfully retrieved, the byte is marked as consumed and a new
+ * reception may be started through rs485_receive_start().
  */
 rs485_status_t rs485_receive(
     uint8_t * p_data);
 
 /**
- * @brief Abort the current interrupt-driven reception.
- *
- * @return
- * - RS485_OK: Reception aborted or no reception was active.
- * - RS485_E_STATE: Driver is not initialized.
- * - Other status: Lower-layer abort error.
- *
- * @details
- * This function clears the active, complete and error reception states.
- *
- * It is intended to be called before an application-requested transmission when
- * the driver is normally waiting for an incoming byte.
- */
-rs485_status_t rs485_receive_abort(void);
-
-/**
- * @brief Echo one previously received byte.
- *
- * @param[out] p_data     Optional destination for the echoed byte. May be NULL.
- * @param[in]  timeout_ms Blocking transmission timeout in milliseconds.
+ * @brief Abort an active RS485 reception.
  *
  * @return RS485_OK on success, error code otherwise.
  *
  * @details
- * This helper performs the responder-side echo operation after a
- * receive-complete notification:
+ * If a reception is currently active, the underlying interrupt-driven UART
+ * receive operation is aborted.
  *
- * 1. Obtain the completed byte through rs485_receive().
- * 2. Transmit the same byte through rs485_send().
- * 3. Optionally copy the echoed byte to @p p_data.
- *
- * The function does not start the next reception. The application must call
- * rs485_receive_start() after the echo transmission completes.
+ * Any pending received byte is discarded and the transceiver is restored to
+ * receive mode.
  */
-rs485_status_t rs485_process_echo(
-    uint8_t * p_data,
-    uint32_t timeout_ms);
+rs485_status_t rs485_receive_abort(void);
 
 /**
- * @brief Notify the upper application that byte reception completed.
+ * @brief Abort an active RS485 transmission.
+ *
+ * @return RS485_OK on success, error code otherwise.
  *
  * @details
- * This function is invoked from interrupt context after the requested byte has
- * been received.
+ * If a transmission is currently active, the underlying interrupt-driven UART
+ * transmit operation is aborted.
  *
- * The application layer must provide the implementation, typically to set an
- * RTOS event flag. The implementation must remain short and ISR-safe.
+ * The transceiver is restored to receive mode after the abort operation.
+ */
+rs485_status_t rs485_transmit_abort(void);
+
+/* ===================== Notification Hook Prototypes ====================== */
+
+/**
+ * @brief Notify completion of a one-byte RS485 transmission.
+ *
+ * @param[in] data  Byte whose transmission has completed.
+ *
+ * @details
+ * This callback is invoked from interrupt context after the underlying UART
+ * transmission has completed and the RS485 transceiver has been restored to
+ * receive mode.
+ *
+ * The default implementation is weak and performs no operation. An upper
+ * application layer may provide a strong definition.
+ *
+ * The overriding implementation must remain short and ISR-safe.
+ */
+void rs485_tx_complete_callback(
+    uint8_t data);
+
+/**
+ * @brief Notify completion of a one-byte RS485 reception.
+ *
+ * @details
+ * This callback is invoked from interrupt context after one byte has been
+ * received successfully.
+ *
+ * The received byte is stored internally and may later be obtained from task
+ * or application context through rs485_receive().
+ *
+ * The default implementation is weak and performs no operation. An upper
+ * application layer may provide a strong definition.
+ *
+ * The overriding implementation must remain short and ISR-safe.
  */
 void rs485_rx_complete_callback(void);
 
 /**
- * @brief Notify the upper application that a UART reception error occurred.
+ * @brief Notify an asynchronous RS485 UART error.
  *
- * @param[in] error_code  STM32 HAL UART error flags.
+ * @param[in] error_code  UART error flags reported by the port layer.
  *
  * @details
- * This function is invoked from interrupt context after a UART reception
- * error.
+ * This callback is invoked from interrupt context when the underlying UART
+ * reports a communication error.
  *
- * The application layer must provide the implementation, typically to store
- * the error flags and set an RTOS event flag. The implementation must remain
- * short and ISR-safe.
+ * The driver clears the active communication state and restores receive mode
+ * before invoking this callback.
+ *
+ * The default implementation is weak and performs no operation. An upper
+ * application layer may provide a strong definition.
+ *
+ * The overriding implementation must remain short and ISR-safe.
  */
 void rs485_error_callback(
     uint32_t error_code);
 
-#endif /* RS485_H_ */
-
 /** @} */
+
+#endif /* RS485_H_ */
