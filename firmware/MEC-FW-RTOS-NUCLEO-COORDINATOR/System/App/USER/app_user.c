@@ -124,88 +124,11 @@ void app_user_task(void * argument)
 
     /* USER CODE BEGIN app_init */
 
-    printf("[APP_USER] init\r\n");
-    printf("[APP_USER] RS485 echo test ready\r\n");
-
     /* USER CODE END app_init */
 
     for (;;)
     {
         /* USER CODE BEGIN app_task */
-
-        uint8_t rs485_data;
-        app_rs485_status_t rs485_status;
-
-        /*
-         * Process every byte currently available in the RS485 receive queue.
-         *
-         * app_rs485_receive() is non-blocking. APP_RS485_E_QUEUE_EMPTY
-         * therefore indicates that all pending received bytes have already
-         * been processed.
-         */
-        for (;;)
-        {
-            rs485_status = app_rs485_receive(
-                &rs485_data);
-
-            if (rs485_status == APP_RS485_E_QUEUE_EMPTY)
-            {
-                break;
-            }
-
-            if (rs485_status != APP_RS485_OK)
-            {
-                /*
-                 * The RS485 application service may still be initializing
-                 * when this task starts. No action is required here; the next
-                 * task iteration will retry.
-                 */
-                break;
-            }
-
-            /*
-             * Report the received byte through SWO.
-             */
-            printf(
-                "[APP_USER] RS485 RX: 0x%02X ('%c')\r\n",
-                rs485_data,
-                ((rs485_data >= 0x20u) &&
-                 (rs485_data <= 0x7Eu)) ?
-                    (char)rs485_data :
-                    '.');
-
-            /*
-             * Queue the same byte for asynchronous RS485 transmission.
-             *
-             * This implements the application-level echo behavior.
-             */
-            rs485_status = app_rs485_send(
-                rs485_data);
-
-            if (rs485_status == APP_RS485_OK)
-            {
-                printf(
-                    "[APP_USER] RS485 echo queued: "
-                    "0x%02X ('%c')\r\n",
-                    rs485_data,
-                    ((rs485_data >= 0x20u) &&
-                     (rs485_data <= 0x7Eu)) ?
-                        (char)rs485_data :
-                        '.');
-            }
-            else
-            {
-                printf(
-                    "[APP_USER] RS485 echo queue error: %d\r\n",
-                    (int)rs485_status);
-
-                /*
-                 * Stop processing additional received bytes during this
-                 * iteration if the transmission request could not be queued.
-                 */
-                break;
-            }
-        }
 
         /* USER CODE END app_task */
 

@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  * SPDX-License-Identifier: MIT
- ******************************************************************************/
+ *****************************************************************************/
 
 /**
  * @file    mrf24j40.h
@@ -33,6 +33,7 @@
  *  - basic transceiver initialization
  *  - RX FIFO safe read
  *  - TX Normal FIFO write + trigger (ACK optional)
+ *  - TX completion and transmission result reporting
  *  - basic configuration helpers (PAN ID, short address, extended address)
  *  - interrupt event decoding
  *
@@ -41,6 +42,11 @@
  * Public functions return @ref mrf24j40_status_t so that:
  *  - hardware and timeout errors propagated from the port layer can be reported
  *  - driver-level state and frame validation errors can be distinguished
+ *
+ * The MRF24J40 hardware performs acknowledgment handling and automatic
+ * retransmissions when acknowledgment is requested. Transmission completion
+ * information is obtained from TXSTAT after a TXNIF event and exposed through
+ * @ref mrf24j40_tx_result_t.
  *
  * @ingroup mrf24j40
  * @{
@@ -106,13 +112,17 @@ typedef enum
  *
  * @details
  * This structure stores basic runtime state used by the driver.
- * It is intentionally minimal for early bring-up and may be extended later.
+ *
+ * The acknowledgment request state of the current TX Normal FIFO transaction
+ * is retained so that the TX result can distinguish between transmissions that
+ * required an acknowledgment and transmissions that did not.
  */
 typedef struct
 {
     volatile bool int_pending;
     volatile bool rx_pending;
     volatile bool tx_complete;
+    volatile bool tx_ack_requested;
 } mrf24j40_context_t;
 
 /**
@@ -134,6 +144,56 @@ typedef struct
     uint8_t lqi;
     uint8_t rssi;
 } mrf24j40_packet_t;
+
+/**
+ * @brief Result of the most recent TX Normal FIFO transmission.
+ *
+ * @details
+ * This structure reports the transmission result obtained from the MRF24J40
+ * TXSTAT register after a TXNIF event.
+ *
+ * Fields:
+ *
+ * - complete:
+ *   A TX Normal FIFO transaction has completed and the remaining fields contain
+ *   valid information.
+ *
+ * - success:
+ *   The MRF24J40 reports the transmission as successful.
+ *
+ * - ack_requested:
+ *   The completed transaction had acknowledgment handling enabled through
+ *   TXNACKREQ.
+ *
+ * - ack_received:
+ *   An acknowledgment was requested and the transmission completed
+ *   successfully.
+ *
+ * - retry_limit_reached:
+ *   The transmission failed after the hardware retry mechanism was exhausted.
+ *   This condition excludes failures explicitly identified as CCA failures.
+ *
+ * - cca_failed:
+ *   The most recent transmission failed because the CSMA-CA procedure could
+ *   not obtain an idle channel.
+ *
+ * - retries:
+ *   Number of hardware retries reported by TXNRETRY<1:0>.
+ *
+ * @note
+ * When @p ack_requested is false, @p ack_received remains false even when the
+ * transmission itself is successful.
+ */
+typedef struct
+{
+    bool complete;
+    bool success;
+    bool ack_requested;
+    bool ack_received;
+    bool retry_limit_reached;
+    bool cca_failed;
+    uint8_t retries;
+} mrf24j40_tx_result_t;
 
 /* ===================== Public Function Prototypes ======================== */
 
@@ -332,6 +392,9 @@ void mrf24j40_set_interrupt_pending(void);
  *
  * Only RXIF and TXNIF are currently used by this minimal driver.
  *
+ * A TXNIF condition only latches the TX completion state. TXSTAT is read later
+ * from thread context by mrf24j40_get_tx_result().
+ *
  * @note
  * INTSTAT bits are cleared by hardware when the register is read.
  */
@@ -389,34 +452,60 @@ mrf24j40_status_t mrf24j40_read_rx_fifo(mrf24j40_packet_t * p_packet);
  * The FCS is not part of the public packet representation. The MRF24J40
  * appends the FCS automatically during transmission.
  *
- * This function clears the previous TX complete indication, loads the
- * TX Normal FIFO and triggers transmission.
+ * This function clears the previous TX complete indication, stores whether
+ * acknowledgment was requested, loads the TX Normal FIFO and triggers
+ * transmission.
+ *
+ * If @p ack_request is true, TXNACKREQ is set and acknowledgment monitoring
+ * and retransmission are delegated to the MRF24J40 hardware.
  *
  * @note
  * If @p ack_request is true, the caller must also set the acknowledgment
  * request bit in the MAC Frame Control field.
  */
-mrf24j40_status_t mrf24j40_write_tx_normal_fifo(const mrf24j40_packet_t * p_packet,
-                                                bool ack_request);
+mrf24j40_status_t mrf24j40_write_tx_normal_fifo(
+    const mrf24j40_packet_t * p_packet,
+    bool ack_request);
 
 /**
- * @brief Get and clear the TX complete indication.
+ * @brief Get and consume the result of the most recent TX Normal FIFO
+ *        transmission.
  *
- * @param[out] p_tx_complete Pointer to the destination where the TX complete
- *                           state will be stored.
+ * @param[out] p_result Pointer where the transmission result will be stored.
  *
  * @return
- * - MRF24J40_OK: The TX complete state was returned successfully.
- * - MRF24J40_E_NULL: Null pointer passed in @p p_tx_complete.
+ * - MRF24J40_OK: TX state was obtained successfully.
+ * - MRF24J40_E_NULL: Null pointer passed in @p p_result.
+ * - MRF24J40_E_HW: A hardware communication error occurred while reading
+ *   TXSTAT.
+ * - MRF24J40_E_TIMEOUT: A port-layer transaction timed out while reading
+ *   TXSTAT.
+ * - MRF24J40_E_PARAM: An invalid register access parameter was detected by the
+ *   port layer.
  *
  * @details
- * This function reports whether a TX Normal FIFO completion event had been
- * latched by mrf24j40_update_interrupt_flags() when a TXNIF event was
- * detected.
+ * If no TXNIF event is pending, the function returns MRF24J40_OK with
+ * p_result->complete set to false and does not access TXSTAT.
  *
- * If a completion was pending, it is consumed and cleared before returning.
+ * If a TXNIF event is pending, TXSTAT is read and the following information is
+ * returned:
+ *
+ * - transmission success or failure
+ * - whether acknowledgment was requested
+ * - whether the requested acknowledgment was received
+ * - whether the hardware retry limit was reached
+ * - whether CSMA-CA failed because the channel remained busy
+ * - number of hardware retries
+ *
+ * The internal TX completion indication is consumed only after TXSTAT has been
+ * read successfully.
+ *
+ * @note
+ * This function is the preferred API for handling TX completion because it
+ * preserves the diagnostic information provided by the MRF24J40 hardware.
  */
-mrf24j40_status_t mrf24j40_get_tx_complete(bool * const p_tx_complete);
+mrf24j40_status_t mrf24j40_get_tx_result(
+    mrf24j40_tx_result_t * const p_result);
 
 #endif /* MRF24J40_H_ */
 
