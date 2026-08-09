@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  * SPDX-License-Identifier: MIT
- ******************************************************************************/
+ *****************************************************************************/
 
 /**
  * @file    app_user.c
@@ -36,15 +36,22 @@
  * where the final user can add application-specific code without modifying the
  * base firmware layers.
  *
- * The user application task provides two main editable regions:
+ * This implementation provides a minimal radio reception test intended for a
+ * node configured as IEEE 802.15.4 PAN coordinator.
  *
- * - app_init: code executed once before entering the task loop.
- * - app_task: code executed periodically every
- *   APP_USER_OUTPUT_UPDATE_PERIOD_MS milliseconds.
+ * The coordinator does not actively transmit application data. It periodically
+ * checks the radio RX queue and prints every received one-byte message together
+ * with the source node short address.
  *
- * The default template does not implement process logic. The final user should
- * place the required application-specific behavior inside the provided USER
- * CODE sections.
+ * IEEE 802.15.4 acknowledgment generation is handled automatically by the
+ * MRF24J40 hardware and therefore requires no application-level processing in
+ * this task.
+ *
+ * @note
+ * The number of retransmissions performed by a remote transmitter cannot be
+ * determined by the coordinator from the received application frame. Retry
+ * information belongs to the transmitting MRF24J40 and is available locally
+ * through its TX result.
  *
  * @ingroup app_user
  * @{
@@ -79,6 +86,9 @@
 
 /**
  * @brief Period, in milliseconds, between user application updates.
+ *
+ * @details
+ * A short polling period is used because app_radio_receive() is non-blocking.
  */
 #define APP_USER_UPDATE_PERIOD_MS   ((uint32_t)10u)
 
@@ -110,13 +120,19 @@
  * @param argument Task argument. Not used.
  *
  * @details
- * This task is the main user application execution context.
+ * This task implements a minimal PAN coordinator reception test.
  *
  * Code inside USER CODE BEGIN app_init is executed once before the periodic
  * loop starts.
  *
- * Code inside USER CODE BEGIN app_task is executed periodically. The execution
- * period is defined by APP_USER_OUTPUT_UPDATE_PERIOD_MS.
+ * Code inside USER CODE BEGIN app_task periodically checks the radio input
+ * queue. Each received message contains:
+ *
+ * - source IEEE 802.15.4 short address
+ * - one-byte application payload
+ *
+ * The radio application and MRF24J40 driver are responsible for MAC frame
+ * processing and automatic acknowledgment generation.
  */
 void app_user_task(void * argument)
 {
@@ -124,11 +140,48 @@ void app_user_task(void * argument)
 
     /* USER CODE BEGIN app_init */
 
+    printf("\r\n");
+    printf("[APP_USER] Radio PAN coordinator test\r\n");
+    printf("[APP_USER] Waiting for remote device frames...\r\n");
+
     /* USER CODE END app_init */
 
     for (;;)
     {
         /* USER CODE BEGIN app_task */
+
+        uint16_t source;
+        uint8_t data;
+        app_radio_status_t radio_status;
+
+        /*
+         * Drain every message currently available in the RX queue.
+         *
+         * app_radio_receive() is non-blocking, so APP_RADIO_E_QUEUE_EMPTY
+         * terminates the loop immediately when there is no more pending data.
+         */
+        do
+        {
+            radio_status = app_radio_receive(&source, &data);
+
+            if (radio_status == APP_RADIO_OK)
+            {
+                printf("[APP_USER] RX src=0x%04X data=0x%02X (%u)\r\n",
+                       source,
+                       data,
+                       data);
+            }
+            else if (radio_status == APP_RADIO_E_QUEUE_EMPTY)
+            {
+                /* No more received messages are currently pending. */
+            }
+            else
+            {
+                printf("[APP_USER] RX error=%d\r\n",
+                       (int)radio_status);
+            }
+
+        } while (radio_status == APP_RADIO_OK);
 
         /* USER CODE END app_task */
 
