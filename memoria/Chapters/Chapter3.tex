@@ -207,16 +207,124 @@ Al igual que en el módulo de entradas digitales, el acceso al periférico SPI c
 
 Las condiciones de falla detectadas durante la actualización de las salidas, así como los errores asociados al funcionamiento de la cola, se notifican mediante el grupo de banderas de eventos \texttt{doutFault}. Esto permite delegar su tratamiento a la tarea de diagnóstico y mantener separadas las responsabilidades de accionamiento y supervisión del sistema.
 
-%\subsubsection{Tarea de comunicación RS485}
+\subsubsection{Tarea de comunicación RS485}
 
-%\subsubsection{Tarea de reloj de tiempo real}
+La tarea \texttt{rs485Task} es responsable de administrar la interfaz RS485 de la estación remota y centralizar el acceso al controlador de comunicación asociado. Su funcionamiento se basa en un esquema asincrónico, de manera que la tarea permanece normalmente bloqueada a la espera de eventos y solo se activa cuando se completa una recepción, existe una solicitud de transmisión, finaliza una transmisión o se detecta una condición de error. Para ello se utiliza el grupo de banderas de eventos \texttt{rs485EventHandle}, evitando realizar un sondeo continuo sobre el periférico.
 
-%\subsubsection{Tarea de comunicación inalámbrica}
+El intercambio de datos con el resto de las tareas se realiza mediante dos colas de mensajes. La función \texttt{app\_rs485\_send()} incorpora los datos pendientes de transmisión en \texttt{rs485OutputQueueHandle} y notifica a \texttt{rs485Task} mediante una bandera de evento. De forma complementaria, los datos recibidos son almacenados por la tarea en \texttt{rs485InputQueueHandle}, desde donde pueden ser recuperados mediante la función no bloqueante \texttt{app\_rs485\_receive()}. Esta organización desacopla a las tareas de aplicación de las operaciones físicas de transmisión y recepción, evitando que deban acceder directamente al driver RS485.
 
-%\subsubsection{Tarea de diagnóstico}
+Debido al funcionamiento semidúplex de la interfaz, \texttt{rs485Task} también coordina la alternancia entre los estados de recepción y transmisión. En condiciones normales se mantiene activa una operación de recepción por interrupciones. Cuando existe información pendiente de transmisión, la recepción es suspendida y se inicia el envío del siguiente dato disponible en la cola. Una vez finalizada la transmisión, la tarea procesa las solicitudes restantes o restablece la recepción cuando no existen nuevos datos pendientes. Las interrupciones asociadas a la UART únicamente notifican la finalización de las operaciones mediante las funciones de retorno \texttt{rs485\_rx\_complete\_callback()} y \texttt{rs485\_tx\_complete\-\_callback()}, mientras que la gestión de las colas y la secuenciación de las operaciones se realizan desde el contexto de \texttt{rs485Task}.
 
-%\subsubsection{Tarea de usuario}
+Las condiciones de falla detectadas durante la inicialización o las operaciones de comunicación, así como los errores asociados a las colas y a los servicios del sistema operativo, se informan mediante el grupo de banderas \texttt{rs485FaultHandle}. De esta forma, el tratamiento de las fallas puede ser delegado a la tarea de diagnóstico, manteniendo separadas las responsabilidades de comunicación, lógica de aplicación y supervisión del sistema.
 
+\subsubsection{Tarea de comunicación inalámbrica}
+
+La tarea \texttt{radioTask} es responsable de administrar la interfaz de comunicación inalámbrica y centralizar el acceso al transceptor MRF24J40. Su funcionamiento se basa en un esquema orientado a eventos, por lo que permanece normalmente bloqueada hasta que se produce una interrupción del transceptor o existe información pendiente de transmisión. Para ello se utiliza el grupo de banderas de eventos \texttt{radioEventHandle}, evitando realizar un sondeo continuo del dispositivo y permitiendo liberar tiempo de procesamiento mientras no existen operaciones pendientes.
+
+El intercambio de información con el resto de las tareas se realiza mediante dos colas de mensajes. La función \texttt{app\_radio\_send()} incorpora en \texttt{radioOutput\-QueueHandle} el dato que se desea transmitir junto con la dirección del nodo de destino y notifica a \texttt{radioTask} mediante una bandera de evento. De forma complementaria, los datos recibidos correctamente son almacenados por la tarea en \texttt{radioInputQueueHandle}, junto con la dirección del nodo de origen, desde donde pueden ser recuperados mediante la función no bloqueante \texttt{app\_radio\_\-receive()}. De esta manera, las demás tareas pueden intercambiar información a través del enlace inalámbrico sin acceder directamente al controlador MRF24J40.
+
+La recepción y finalización de las transmisiones son notificadas por el transceptor mediante su línea de interrupción. La interrupción externa asociada únicamente registra la condición pendiente y establece la bandera correspondiente en \texttt{radioEventHandle}, mientras que el procesamiento del evento se realiza posteriormente desde el contexto de \texttt{radioTask}. La tarea determina entonces el origen de la interrupción y, según corresponda, procesa la información recibida o finaliza la operación de transmisión en curso. Este mecanismo permite mantener reducido el procesamiento realizado en contexto de interrupción y concentrar las operaciones de acceso al transceptor dentro de una única tarea.
+
+Las solicitudes de transmisión se procesan secuencialmente, manteniéndose una única operación activa sobre el transceptor. Una vez finalizada cada transmisión, \texttt{radioTask} puede iniciar el envío del siguiente elemento almacenado en \texttt{radioOutputQueueHandle}. De esta forma, la cola desacopla la generación de solicitudes por parte de las tareas de aplicación de su ejecución efectiva sobre el hardware, mientras que la tarea de radio mantiene el control exclusivo sobre el MRF24J40.
+
+Las condiciones de falla detectadas durante el acceso al transceptor, el procesamiento de los datos o la utilización de los recursos del sistema operativo se informan mediante el grupo de banderas \texttt{radioFaultHandle}. Asimismo, este recurso permite registrar condiciones asociadas al resultado de las transmisiones. Su tratamiento puede ser delegado posteriormente a la tarea de diagnóstico, manteniendo separadas las responsabilidades de comunicación inalámbrica, lógica de aplicación y supervisión del sistema.
+
+\subsubsection{Tarea de reloj de tiempo real}
+
+La tarea \texttt{rtcTask} es responsable de mantener actualizada la información de fecha y hora utilizada por la estación central. Para ello emplea el periférico RTC integrado en el microcontrolador, cuya base de tiempo se obtiene mediante un cristal externo de 32,768 kHz y dispone de alimentación de respaldo por batería, permitiendo conservar la referencia temporal aun cuando se interrumpe la alimentación principal del sistema.
+
+La tarea realiza periódicamente la lectura del RTC y mantiene una copia actualizada de la información temporal disponible para el resto del firmware. Las demás tareas pueden consultar esta información mediante la función \texttt{app\_rtc\_get()}, sin necesidad de acceder directamente al periférico. De forma complementaria, la función \texttt{app\_rtc\_set()} permite establecer una nueva fecha y hora cuando resulte necesario, centralizando en este módulo las operaciones relacionadas con la referencia temporal del sistema.
+
+El acceso a la información de fecha y hora se gestiona de manera que su actualización por \texttt{rtcTask} y su consulta desde otras tareas no produzcan inconsistencias. De esta forma, el resto del firmware dispone de una interfaz común para obtener o modificar la referencia temporal, mientras que los detalles asociados al manejo del periférico RTC permanecen encapsulados dentro del módulo correspondiente.
+
+Las condiciones de falla detectadas durante la configuración o el acceso al RTC se informan mediante el grupo de banderas \texttt{rtcFaultHandle}. Esto permite delegar su tratamiento a la tarea de diagnóstico y mantener separadas las responsabilidades asociadas al mantenimiento de la fecha y hora y a la supervisión general del sistema.
+
+\subsubsection{Tarea de usuario}
+
+La tarea \texttt{userTask} es responsable de ejecutar la lógica de aplicación específica del proceso productivo en el que se utiliza el sistema. A diferencia de las tareas anteriores, no se encuentra asociada directamente a un periférico o subsistema particular, sino que utiliza las interfaces proporcionadas por los distintos módulos del firmware para implementar las funciones de adquisición, control y comunicación requeridas por cada aplicación.
+
+El acceso a los recursos del sistema se realiza exclusivamente mediante las interfaces de aplicación correspondientes. De esta manera, \texttt{userTask} puede consultar el estado de las entradas digitales mediante \texttt{app\_din\_read()}, establecer las salidas mediante \texttt{app\_dout\_set()}, intercambiar información a través de las interfaces de comunicación mediante \texttt{app\_radio\_send()}, \texttt{app\_radio\_receive()}, \texttt{app\_rs485\_send()} y \texttt{app\_rs485\_receive()}, y acceder a la referencia temporal del sistema mediante \texttt{app\_rtc\_get()} y \texttt{app\_rtc\_set()}. Así, la lógica de usuario permanece desacoplada del acceso directo a los periféricos y de los detalles internos de cada controlador.
+
+La estructura de \texttt{userTask} contempla una etapa de inicialización de la aplicación seguida de un ciclo de ejecución periódico, dentro de los cuales pueden incorporarse las funciones particulares requeridas por el proceso. El retardo entre ejecuciones se implementa mediante los servicios proporcionados por CMSIS-RTOS2, permitiendo definir una periodicidad acorde con las necesidades de la aplicación y evitando la ocupación continua del procesador.
+
+Esta organización permite adaptar el firmware a diferentes procesos productivos modificando principalmente el comportamiento de \texttt{userTask}, mientras que las tareas encargadas de administrar los recursos de hardware pueden mantenerse sin cambios. De esta forma, la tarea de usuario constituye el nivel de integración entre los servicios proporcionados por la plataforma y la lógica de control específica de cada aplicación.
+
+\subsubsection{Tarea de diagnóstico}
+
+La tarea \texttt{diagnosticsTask} es responsable de centralizar la supervisión de las condiciones de falla detectadas por los distintos módulos del firmware. Para ello consulta los grupos de banderas de eventos asociados a las entradas digitales, salidas digitales, comunicación inalámbrica, interfaz RS485 y reloj de tiempo real, mediante los objetos \texttt{dinFaultHandle}, \texttt{doutFaultHandle}, \texttt{radioFaultHandle}, \texttt{rs485FaultHandle} y \texttt{rtcFaultHandle}, respectivamente.
+
+En la implementación actual, \texttt{diagnosticsTask} se limita a capturar las banderas de error pendientes y reportarlas mediante la interfaz de depuración SWO. Este mecanismo resulta útil durante las etapas de desarrollo y validación, ya que permite identificar rápidamente el origen y el tipo de falla sin incorporar procesamiento adicional dentro de las tareas que administran cada subsistema.
+
+Como evolución de esta implementación, se prevé que \texttt{diagnosticsTask} incorpore una estrategia de gestión de fallas capaz de clasificar su severidad, registrar su estado y notificar las condiciones relevantes a \texttt{userTask}. De esta forma, la lógica de aplicación podrá adoptar las acciones correspondientes ante situaciones anómalas, mientras que la detección y consolidación de los errores permanecerán centralizadas en una única tarea.
+
+\section{Comunicaciones e interfaces}
+
+La comunicación entre los distintos elementos del sistema se implementó mediante dos interfaces con objetivos diferentes. Por un lado, el enlace inalámbrico entre la estación central y las estaciones remotas utiliza una implementación basada en IEEE 802.15.4 sobre el transceptor MRF24J40, incorporando direccionamiento de nodos y mecanismos de confirmación de las transmisiones. Por otro lado, las estaciones remotas disponen de una interfaz RS485 destinada a la comunicación cableada con dispositivos externos, sobre la cual se implementó inicialmente un mecanismo propietario básico de intercambio de datos.
+
+En ambos casos, las capas de comunicación fueron diseñadas para desacoplar la lógica de aplicación de los detalles asociados al acceso físico a los periféricos. Las operaciones de transmisión y recepción son gestionadas de forma asincrónica y los errores detectados durante las comunicaciones son propagados hacia los mecanismos de diagnóstico descriptos previamente.
+
+%----------------------------------------------------------------------------------------
+
+\subsection{Comunicación inalámbrica}
+
+La comunicación inalámbrica se implementó mediante una red de topología estrella compuesta por una estación central configurada como coordinador PAN y hasta dieciséis estaciones remotas. Todos los nodos pertenecen a una misma PAN, identificada mediante un valor fijo, y utilizan direccionamiento corto de 16 bits. La estación central utiliza la dirección \texttt{0x0000}, mientras que las estaciones remotas emplean direcciones comprendidas entre \texttt{0x0001} y \texttt{0x0010}. La configuración del rol y de la dirección local se establece durante la compilación del firmware.
+
+La red opera en modo \textit{nonbeacon}, sin mecanismos de asociación, descubrimiento o asignación dinámica de direcciones. En consecuencia, la estación central conoce previamente las direcciones de los nodos que conforman la red y cada estación remota se comunica exclusivamente con el coordinador. Este esquema simplifica la implementación y resulta suficiente para la topología fija definida para el sistema.
+
+Sobre la capa MAC de IEEE 802.15.4 se implementó una trama de aplicación mínima destinada al intercambio de un byte de información. La estructura utilizada se presenta en la tabla \ref{tab:radio_frame}. La cabecera MAC ocupa nueve bytes e incorpora el campo de control, un número de secuencia, el identificador de la PAN y las direcciones cortas de destino y origen. A continuación se incorpora un byte de datos correspondiente a la información de aplicación. El campo FCS (\textit{Frame Check Sequence}, secuencia de verificación de trama) no es incorporado por el firmware, ya que es generado y verificado automáticamente por el MRF24J40.
+
+\begin{table}[h]
+	\centering
+	\caption[Formato de la trama inalámbrica]{Formato de la trama utilizada para la comunicación inalámbrica.}
+	\begin{tabular}{l c l}
+		\toprule
+		\textbf{Campo}             & \textbf{Tamaño} & \textbf{Descripción} \\
+		\midrule
+		Frame Control              & 2 bytes         & Configuración de la trama IEEE 802.15.4 \\
+		Sequence Number            & 1 byte          & Número de secuencia \\
+		Destination PAN ID         & 2 bytes         & Identificador de la red \\
+		Destination Address        & 2 bytes         & Dirección corta del nodo de destino \\
+		Source Address             & 2 bytes         & Dirección corta del nodo de origen \\
+		Payload                    & 1 byte          & Dato de aplicación \\
+		\bottomrule
+		\hline
+	\end{tabular}
+	\label{tab:radio_frame}
+\end{table}
+
+La transmisión se inicia mediante \texttt{app\_radio\_send()}, que recibe la dirección de destino y el byte que se desea enviar. La información es almacenada en una cola hasta que \texttt{radioTask} puede procesarla. La tarea construye entonces la trama correspondiente y la carga en la FIFO de transmisión del MRF24J40. En recepción, el transceptor genera una interrupción cuando existe una nueva trama disponible; posteriormente, desde el contexto de \texttt{radioTask}, se recupera la información, se verifica que la trama corresponda al formato esperado y se extraen la dirección de origen y el dato recibido, que quedan disponibles para la aplicación mediante \texttt{app\_radio\_receive()}.
+
+Todas las tramas de datos se transmiten solicitando acuse de recibo. La generación y detección del ACK, así como las retransmisiones ante la ausencia de confirmación, son realizadas automáticamente por el MRF24J40. Una vez finalizado el procedimiento, el firmware consulta el resultado de la transmisión y diferencia entre una operación exitosa, una falla por ausencia de ACK luego de agotar las retransmisiones y una falla de acceso al medio producida por el mecanismo CSMA/CA. Estas condiciones, junto con errores de acceso al hardware, tramas inválidas o desbordamiento de las colas, son informadas mediante \texttt{radioFaultHandle} para su posterior tratamiento por el sistema de diagnóstico.
+
+%----------------------------------------------------------------------------------------
+
+\subsection{Comunicación mediante RS485}
+
+La interfaz RS485 fue implementada inicialmente mediante un mecanismo propietario básico orientado al intercambio asincrónico de datos entre la estación remota y dispositivos externos. En su estado actual, cada operación de transmisión o recepción procesa un único byte, por lo que no se implementan todavía campos adicionales de direccionamiento, delimitación de trama, comandos, sumas de verificación o CRC. Esta solución constituye una interfaz mínima sobre la cual pueden incorporarse posteriormente protocolos de mayor complejidad sin modificar las capas encargadas del acceso al hardware.
+
+La transmisión y recepción utilizan la UART del microcontrolador mediante interrupciones. La capa de bajo nivel controla además las señales DE y /RE del transceptor RS485 para alternar entre los modos de transmisión y recepción. Al tratarse de una interfaz semidúplex, solamente puede existir una operación activa en cada instante. El estado de reposo corresponde al modo de recepción, manteniendo deshabilitado el transmisor y habilitado el receptor.
+
+El formato utilizado actualmente se reduce al byte de aplicación indicado en la tabla \ref{tab:rs485_frame}. La interpretación de este valor depende de la lógica implementada en las capas superiores y no forma parte del driver RS485.
+
+\begin{table}[h]
+	\centering
+	\caption[Unidad de datos RS485]{Unidad de datos utilizada por la interfaz RS485.}
+	\begin{tabular}{l c l}
+		\toprule
+		\textbf{Campo} & \textbf{Tamaño} & \textbf{Descripción} \\
+		\midrule
+		Payload        & 1 byte          & Dato intercambiado con el dispositivo externo \\
+		\bottomrule
+		\hline
+	\end{tabular}
+	\label{tab:rs485_frame}
+\end{table}
+
+La función \texttt{app\_rs485\_send()} incorpora el dato en la cola de transmisión y retorna inmediatamente, sin esperar a que la transferencia física finalice. Cuando \texttt{rs485Task} procesa la solicitud, suspende una eventual recepción activa, configura el transceptor en modo de transmisión e inicia el envío mediante interrupciones. Una vez transmitido el byte, el controlador vuelve automáticamente al modo de recepción y notifica a la tarea para continuar con el siguiente dato pendiente o restablecer la espera de una nueva recepción.
+
+En sentido contrario, la recepción permanece normalmente armada mientras no existen transmisiones pendientes. Cuando la UART recibe un byte genera una interrupción y la información es recuperada posteriormente desde el contexto de \texttt{rs485Task}. El dato se almacena en la cola de recepción y puede ser obtenido por otras tareas mediante \texttt{app\_rs485\_receive()}.
+
+El manejo de errores contempla condiciones asociadas a la inicialización, estados inválidos del controlador, tiempos de espera, fallas de hardware y errores informados por la UART. Ante una condición de comunicación anómala, cualquier operación activa se considera finalizada, el transceptor retorna al modo de recepción y la condición correspondiente se informa mediante \texttt{rs485FaultHandle}. Asimismo, se supervisan los posibles desbordamientos de las colas de transmisión y recepción y los errores asociados a los servicios del sistema operativo.
 
 
 
