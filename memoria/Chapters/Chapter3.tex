@@ -263,8 +263,6 @@ La comunicación entre los distintos elementos del sistema se implementó median
 
 En ambos casos, las capas de comunicación fueron diseñadas para desacoplar la lógica de aplicación de los detalles asociados al acceso físico a los periféricos. Las operaciones de transmisión y recepción son gestionadas de forma asincrónica y los errores detectados durante las comunicaciones son propagados hacia los mecanismos de diagnóstico descriptos previamente.
 
-%----------------------------------------------------------------------------------------
-
 \subsection{Comunicación inalámbrica}
 
 La comunicación inalámbrica se implementó mediante una red de topología estrella compuesta por una estación central configurada como coordinador PAN y hasta dieciséis estaciones remotas. Todos los nodos pertenecen a una misma PAN, identificada mediante un valor fijo, y utilizan direccionamiento corto de 16 bits. La estación central utiliza la dirección \texttt{0x0000}, mientras que las estaciones remotas emplean direcciones comprendidas entre \texttt{0x0001} y \texttt{0x0010}. La configuración del rol y de la dirección local se establece durante la compilación del firmware.
@@ -296,8 +294,6 @@ La transmisión se inicia mediante \texttt{app\_radio\_send()}, que recibe la di
 
 Todas las tramas de datos se transmiten solicitando acuse de recibo. La generación y detección del ACK, así como las retransmisiones ante la ausencia de confirmación, son realizadas automáticamente por el MRF24J40. Una vez finalizado el procedimiento, el firmware consulta el resultado de la transmisión y diferencia entre una operación exitosa, una falla por ausencia de ACK luego de agotar las retransmisiones y una falla de acceso al medio producida por el mecanismo CSMA/CA. Estas condiciones, junto con errores de acceso al hardware, tramas inválidas o desbordamiento de las colas, son informadas mediante \texttt{radioFaultHandle} para su posterior tratamiento por el sistema de diagnóstico.
 
-%----------------------------------------------------------------------------------------
-
 \subsection{Comunicación mediante RS485}
 
 La interfaz RS485 fue implementada inicialmente mediante un mecanismo propietario básico orientado al intercambio asincrónico de datos entre la estación remota y dispositivos externos. En su estado actual, cada operación de transmisión o recepción procesa un único byte, por lo que no se implementan todavía campos adicionales de direccionamiento, delimitación de trama, comandos, sumas de verificación o CRC. Esta solución constituye una interfaz mínima sobre la cual pueden incorporarse posteriormente protocolos de mayor complejidad sin modificar las capas encargadas del acceso al hardware.
@@ -326,14 +322,61 @@ En sentido contrario, la recepción permanece normalmente armada mientras no exi
 
 El manejo de errores contempla condiciones asociadas a la inicialización, estados inválidos del controlador, tiempos de espera, fallas de hardware y errores informados por la UART. Ante una condición de comunicación anómala, cualquier operación activa se considera finalizada, el transceptor retorna al modo de recepción y la condición correspondiente se informa mediante \texttt{rs485FaultHandle}. Asimismo, se supervisan los posibles desbordamientos de las colas de transmisión y recepción y los errores asociados a los servicios del sistema operativo.
 
+%----------------------------------------------------------------------------------------
+\section{Integración hardware-software}
 
+La integración entre los módulos de hardware y software se realizó siguiendo la arquitectura en capas presentada en las secciones anteriores. Los periféricos físicos son gestionados mediante controladores que encapsulan las operaciones necesarias para su acceso. Sobre estos se implementaron los servicios de aplicación encargados de administrar los principales recursos del sistema, como las entradas y salidas digitales, las interfaces de comunicación y el reloj de tiempo real.
 
+Las distintas funciones se ejecutan de forma concurrente mediante tareas de FreeRTOS, comunicadas principalmente mediante colas de mensajes y grupos de eventos. Esto permite desacoplar las solicitudes de su procesamiento y mantener el acceso al hardware dentro de las tareas correspondientes. Las interrupciones de los periféricos se utilizan para señalizar los eventos que requieren atención. En el nivel superior, la tarea \texttt{userTask} utiliza las interfaces proporcionadas por estos servicios para implementar la lógica específica del proceso productivo.
 
+\subsection{Integración de las entradas digitales}
 
+La integración de las entradas digitales se representa en la figura \ref{fig:integracion_entradas}. El flujo de información comienza en el circuito SCLT3-8BT8, encargado de acondicionar las señales provenientes del proceso y proporcionar su estado al microcontrolador mediante SPI. Las operaciones sobre esta interfaz se realizan a través de la HAL de STM32 y son encapsuladas por el driver específico de entradas, evitando que las capas superiores dependan de las particularidades de acceso al circuito integrado.
 
+Sobre este driver se encuentra la tarea de entradas, encargada de realizar la adquisición y mantener disponible el estado de los canales. La API proporciona la función \texttt{din\_read()}, mediante la cual la lógica implementada en \texttt{userTask} puede consultar las entradas del sistema. De esta manera, el flujo de información se produce desde las señales físicas hacia la lógica de control sin que esta última deba conocer el mecanismo de adquisición, la interfaz SPI ni las características particulares del SCLT3-8BT8.
 
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.9\textwidth]{./Figures/integracion_entradas.pdf}
+	\caption{Integración hardware-software de las entradas digitales.}
+	\label{fig:integracion_entradas}
+\end{figure}
 
+\subsection{Integración de las salidas digitales}
 
+El flujo asociado a las salidas digitales, presentado en la figura \ref{fig:integracion_salidas}, se desarrolla en sentido inverso al correspondiente a las entradas. Una decisión generada por la lógica de control en \texttt{userTask} se comunica mediante la función \texttt{dout\_set()} de la API de salidas, permitiendo establecer el estado deseado sin acceder directamente al dispositivo físico.
 
+La solicitud es procesada por la tarea de salidas y transferida al driver del VNI\-8200XP-32, que utiliza la interfaz SPI y los servicios de la HAL para efectuar la escritura sobre el circuito integrado. Este último realiza finalmente el accionamiento de las cargas conectadas a las salidas digitales. Esta separación permite que la lógica del proceso opere sobre estados lógicos de salida, mientras que la transferencia y el control del dispositivo permanecen encapsulados en las capas inferiores.
 
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.9\textwidth]{./Figures/integracion_salidas.pdf}
+	\caption{Integración hardware-software de las salidas digitales.}
+	\label{fig:integracion_salidas}
+\end{figure}
 
+\subsection{Integración de la interfaz RS485}
+
+A diferencia de los casos anteriores, la interfaz RS485 presenta un flujo de información bidireccional, como se muestra en la figura \ref{fig:integracion_rs485}. El transceptor SN65HVD\-82DR constituye la interfaz física con el bus y se encuentra conectado a una UART del microcontrolador. La HAL proporciona los mecanismos de transmisión y recepción, mientras que el driver RS485 administra el intercambio de datos y el cambio entre los modos de transmisión y recepción del transceptor.
+
+La tarea de RS485 actúa como intermediaria entre el driver y la lógica de aplicación, gestionando los datos recibidos y las solicitudes pendientes de transmisión. Las funciones \texttt{rs485\_send()} y \texttt{rs485\_receive()} proporcionan a \texttt{userTask} una interfaz bidireccional independiente de los detalles relacionados con la UART, las interrupciones y las señales de habilitación del transceptor. De este modo, la lógica del proceso puede intercambiar información con dispositivos externos utilizando un servicio de comunicación uniforme.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1.0\textwidth]{./Figures/integracion_rs485.pdf}
+	\caption{Integración hardware-software de la interfaz RS485.}
+	\label{fig:integracion_rs485}
+\end{figure}
+
+\subsection{Integración de la interfaz de radiofrecuencia}
+
+La integración de la comunicación inalámbrica, presentada en la figura \ref{fig:integracion_rf}, emplea el transceptor MRF24J40MA-I/RM conectado al microcontrolador mediante SPI. Las operaciones de acceso al dispositivo se realizan a través de la HAL y son encapsuladas por el driver MRF24J40, que proporciona las primitivas necesarias para la transmisión, recepción y gestión de los eventos generados por el transceptor.
+
+La tarea de radiofrecuencia concentra el procesamiento asociado al enlace inalámbrico y proporciona a las capas superiores una interfaz mediante las funciones \texttt{radio\_send()} y \texttt{radio\_receive()}. A través de ellas, \texttt{userTask} puede intercambiar información con otros nodos sin intervenir directamente en el acceso SPI, la atención de interrupciones ni la gestión interna del transceptor. De esta forma, la comunicación inalámbrica queda integrada como un servicio disponible para la lógica específica del proceso productivo.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1.0\textwidth]{./Figures/integracion_rf.pdf}
+	\caption{Integración hardware-software de la interfaz de radiofrecuencia.}
+	\label{fig:integracion_rf}
+\end{figure}
