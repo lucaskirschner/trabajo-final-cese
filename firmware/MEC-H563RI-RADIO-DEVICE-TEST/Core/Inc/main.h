@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2026 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -57,18 +57,22 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define BUTTON_Pin GPIO_PIN_13
-#define BUTTON_GPIO_Port GPIOC
-#define BUTTON_EXTI_IRQn EXTI13_IRQn
 #define INT_Pin GPIO_PIN_0
 #define INT_GPIO_Port GPIOA
 #define INT_EXTI_IRQn EXTI0_IRQn
+#define BUTTON_Pin GPIO_PIN_14
+#define BUTTON_GPIO_Port GPIOB
+#define BUTTON_EXTI_IRQn EXTI14_IRQn
 #define SPI3_CS_Pin GPIO_PIN_15
 #define SPI3_CS_GPIO_Port GPIOA
 #define WAKE_Pin GPIO_PIN_2
 #define WAKE_GPIO_Port GPIOD
-#define RESET_Pin GPIO_PIN_12
-#define RESET_GPIO_Port GPIOG
+#define GR_LED_Pin GPIO_PIN_4
+#define GR_LED_GPIO_Port GPIOB
+#define YE_LED_Pin GPIO_PIN_5
+#define YE_LED_GPIO_Port GPIOB
+#define RE_LED_Pin GPIO_PIN_8
+#define RE_LED_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

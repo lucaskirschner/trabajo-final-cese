@@ -18,8 +18,8 @@
 #include <stdio.h>
 
 #define APP_RADIO_PAN_ID                 ((uint16_t)0x1234u)
-#define APP_RADIO_SHORT_ADDRESS          ((uint16_t)0x0001u)
-#define APP_RADIO_DESTINATION_ADDRESS    ((uint16_t)0x0000u)
+#define APP_RADIO_SHORT_ADDRESS          ((uint16_t)0x0002u)
+#define APP_RADIO_DESTINATION_ADDRESS    ((uint16_t)0x0001u)
 
 #define APP_RADIO_EXPECTED_PANIDL        ((uint8_t)0x34u)
 #define APP_RADIO_EXPECTED_PANIDH        ((uint8_t)0x12u)
@@ -408,20 +408,6 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
         mrf24j40_task_notify_irq();
     }
 
-    /*
-     * User button interrupt.
-     *
-     * Do not access the radio or SPI here.
-     * Only notify the application task.
-     */
-    if (GPIO_Pin == BUTTON_Pin)
-    {
-        app_button_pressed_flag = true;
-    }
-}
-
-void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
-{
     /*
      * User button interrupt.
      *

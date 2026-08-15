@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2026 STMicroelectronics.
+  * Copyright (c) 2025 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -213,17 +213,17 @@ void EXTI0_IRQHandler(void)
 }
 
 /**
-  * @brief This function handles EXTI Line13 interrupt.
+  * @brief This function handles EXTI Line14 interrupt.
   */
-void EXTI13_IRQHandler(void)
+void EXTI14_IRQHandler(void)
 {
-  /* USER CODE BEGIN EXTI13_IRQn 0 */
+  /* USER CODE BEGIN EXTI14_IRQn 0 */
 
-  /* USER CODE END EXTI13_IRQn 0 */
+  /* USER CODE END EXTI14_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(BUTTON_Pin);
-  /* USER CODE BEGIN EXTI13_IRQn 1 */
+  /* USER CODE BEGIN EXTI14_IRQn 1 */
 
-  /* USER CODE END EXTI13_IRQn 1 */
+  /* USER CODE END EXTI14_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
