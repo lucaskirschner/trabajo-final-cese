@@ -24,6 +24,7 @@
 #include "string.h"
 #include "swo.h"
 #include "vni8200xp32.h"
+#include "sclt38bt8.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -91,6 +92,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
+	uint8_t p_inputs = 0x00;
 
   /* USER CODE END 1 */
 
@@ -119,7 +121,7 @@ int main(void)
   /* Init main*/
   printf("Init main \r\n");
 
-  HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_SET);
+  //HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_SET);
 
   /* USER CODE END 2 */
 
@@ -128,15 +130,15 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	status = vni8200xp32_write_outputs(0xFF);
+	/*status = vni8200xp32_write_outputs(0xFF);
 
 	printf("Status: %s (%d)\r\n",
 		   vni8200xp32_status_str(status),
-		   (int)status);
+		   (int)status);*/
 
-	//HAL_GPIO_TogglePin(OUT_EN_GPIO_Port, OUT_EN_Pin);
+	sclt38bt8_read_inputs(&p_inputs);
 
-	HAL_Delay(5000);
+	HAL_Delay(1000);
 
     /* USER CODE BEGIN 3 */
   }
