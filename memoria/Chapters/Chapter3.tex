@@ -78,13 +78,6 @@ Todas estas características permitieron disponer de una plataforma de procesami
 
 Esta etapa fue diseñada para proporcionar un dominio de alimentación aislado de 5 V a partir de una alimentación industrial nominal de 24 V, garantizando además un elevado nivel de robustez frente a las condiciones eléctricas habituales presentes en entornos industriales. La tensión de entrada de 24 V se distribuye directamente hacia las etapas de entradas y salidas industriales, mientras que la electrónica de procesamiento dispone de una alimentación aislada de 5 V, a partir de donde se obtiene posteriormente la tensión de 3,3 V utilizada por el microcontrolador y los circuitos digitales. Esta arquitectura permite desacoplar eléctricamente la lógica de control del dominio de potencia industrial, mejorando la inmunidad frente a perturbaciones y diferencias de potencial. El esquema eléctrico de esta etapa se presenta en la figura \ref{fig:pwr_schematic}.
 
-\begin{figure}[ht]
-	\centering
-	\includegraphics[width=1.0\textwidth]{./Figures/pwr_schematic.pdf}
-	\caption{Esquema eléctrico de la etapa de alimentación.}
-	\label{fig:pwr_schematic}
-\end{figure}
-
 La conversión de energía se realiza mediante el módulo convertidor CC-CC aislado 1769405341 de Würth Elektronik, que admite una tensión de entrada nominal de 24 V y entrega una salida regulada de 5 V con una capacidad de corriente de hasta 400 mA. El convertidor incorpora aislamiento galvánico entre la entrada y la salida, proporcionando una tensión de aislamiento de 1 kV, lo que permite desacoplar eléctricamente la electrónica de control respecto del dominio de alimentación industrial y reducir la propagación de perturbaciones y diferencias de potencial provenientes del entorno industrial.
 
 Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéticas, tanto la entrada como la salida del convertidor incorporan capacitores de desacople ubicados próximos al módulo. Estos elementos reducen el ruido conducido y estabilizan la tensión de alimentación, lo que contribuye al correcto funcionamiento de la electrónica digital.
@@ -92,6 +85,13 @@ Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéti
 La protección de la entrada contempla múltiples mecanismos destinados a incrementar la confiabilidad del sistema. Un fusible de 10 A constituye la primera barrera frente a condiciones de sobrecorriente o cortocircuito, limitando la energía disponible durante una falla. A continuación, un diodo TVS de 26 V protege al convertidor frente a sobretensiones transitorias generadas sobre la línea de alimentación, mientras que un diodo \textit{Schottky} conectado en serie impide la circulación de corriente en sentido inverso, proporcionando protección frente a inversiones accidentales de polaridad y evitando daños sobre los circuitos posteriores.
 
 A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, lo que hace innecesario incorporar una segunda etapa de conversión conmutada.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=1.0\textwidth]{./Figures/pwr_schematic.pdf}
+	\caption{Esquema eléctrico de la etapa de alimentación.}
+	\label{fig:pwr_schematic}
+\end{figure}
 
 \subsection{Entradas digitales}
 
@@ -302,7 +302,7 @@ Todas las tramas de datos se transmiten con solicitud de acuse de recibo. La gen
 
 \subsection{Comunicación mediante RS485}
 
-La interfaz RS485 se implementó inicialmente mediante un mecanismo propietario básico orientado al intercambio asíncrono de datos entre la estación remota y dispositivos externos. En su estado actual, cada operación de transmisión o recepción procesa un único byte, por lo que todavía no se incorporaron campos adicionales de direccionamiento, delimitación de trama, comandos ni mecanismos de verificación mediante suma de comprobación o CRC. Esta solución constituye una interfaz mínima sobre la cual pueden incorporarse posteriormente protocolos de mayor complejidad sin modificar las capas encargadas del acceso al hardware.
+La interfaz RS485 se implementó inicialmente mediante un mecanismo propietario básico orientado al intercambio asíncrono de datos entre la estación remota y dispositivos externos. En su estado actual, cada operación de transmisión o recepción procesa un único byte, por lo que todavía no se incorporaron campos adicionales de direccionamiento, delimitación de trama, comandos ni mecanismos de verificación mediante suma de comprobación o CRC. Esta solución constituye una interfaz mínima sobre la que pueden incorporarse posteriormente protocolos de mayor complejidad sin modificar las capas encargadas del acceso al hardware.
 
 La transmisión y la recepción utilizan la UART del microcontrolador mediante interrupciones. La capa de bajo nivel controla además las señales DE y /RE del transceptor RS485 para alternar entre los modos de transmisión y recepción. Debido al funcionamiento semidúplex de la interfaz, solo puede existir una operación activa en cada instante. El estado de reposo corresponde al modo de recepción, con el transmisor deshabilitado y el receptor habilitado.
 
@@ -340,8 +340,6 @@ Las distintas funciones se ejecutan de forma concurrente mediante tareas de Free
 
 La integración de las entradas digitales se representa en la figura \ref{fig:integracion_entradas}. El flujo de información comienza en el circuito SCLT3-8BT8, encargado de acondicionar las señales provenientes del proceso y proporcionar su estado al microcontrolador mediante SPI. Las operaciones sobre esta interfaz se realizan a través de la HAL de STM32 y son encapsuladas por el driver de entradas, lo que evita que las capas superiores dependan de las particularidades de acceso al circuito integrado.
 
-Sobre este driver se encuentra la tarea de entradas, encargada de realizar la adquisición y mantener disponible el estado de los canales. La API proporciona la función \texttt{app\_din\_read()}, mediante la cual la lógica implementada en \texttt{userTask} puede consultar las entradas del sistema. De esta forma, la información fluye desde las señales físicas hacia la lógica de control sin que esta última deba conocer el mecanismo de adquisición, la interfaz SPI ni las características particulares del SCLT3-8BT8.
-
 \begin{figure}[ht]
 	\centering
 	\includegraphics[width=0.9\textwidth]{./Figures/integracion_entradas.pdf}
@@ -349,12 +347,11 @@ Sobre este driver se encuentra la tarea de entradas, encargada de realizar la ad
 	\label{fig:integracion_entradas}
 \end{figure}
 
+Sobre este driver se encuentra la tarea de entradas, encargada de realizar la adquisición y mantener disponible el estado de los canales. La API proporciona la función \texttt{app\_din\_read()}, mediante la cual la lógica implementada en \texttt{userTask} puede consultar las entradas del sistema. De esta forma, la información fluye desde las señales físicas hacia la lógica de control sin que esta última deba conocer el mecanismo de adquisición, la interfaz SPI ni las características particulares del SCLT3-8BT8.
 
 \subsection{Integración de las salidas digitales}
 
 El flujo asociado a las salidas digitales, presentado en la figura \ref{fig:integracion_salidas}, se desarrolla en sentido inverso al correspondiente a las entradas. Una decisión generada por la lógica de control en \texttt{userTask} se comunica mediante la función \texttt{app\_dout\_set()} de la API de salidas, que permite establecer el estado deseado sin acceder directamente al dispositivo físico.
-
-La solicitud es procesada por la tarea de salidas y transferida al driver del VNI82\-00XP-32, que utiliza la interfaz SPI y los servicios de la HAL para efectuar la escritura sobre el circuito integrado. Este realiza finalmente el accionamiento de las cargas conectadas a las salidas digitales. Esta separación permite que la lógica del proceso opere sobre estados lógicos de salida, mientras que la transferencia de datos y el control del dispositivo permanecen encapsulados en las capas inferiores.
 
 \begin{figure}[ht]
 	\centering
@@ -363,12 +360,11 @@ La solicitud es procesada por la tarea de salidas y transferida al driver del VN
 	\label{fig:integracion_salidas}
 \end{figure}
 
+La solicitud es procesada por la tarea de salidas y transferida al driver del VNI82\-00XP-32, que utiliza la interfaz SPI y los servicios de la HAL para efectuar la escritura sobre el circuito integrado. Este realiza finalmente el accionamiento de las cargas conectadas a las salidas digitales. Esta separación permite que la lógica del proceso opere sobre estados lógicos de salida, mientras que la transferencia de datos y el control del dispositivo permanecen encapsulados en las capas inferiores.
 
 \subsection{Integración de la interfaz RS485}
 
 A diferencia de los casos anteriores, la interfaz RS485 presenta un flujo de información bidireccional, como se muestra en la figura \ref{fig:integracion_rs485}. El transceptor SN65HVD\-82 constituye la interfaz física con el bus y se encuentra conectado a una UART del microcontrolador. La HAL proporciona los mecanismos de transmisión y recepción, mientras que el driver RS485 administra el intercambio de datos y la alternancia entre los modos de transmisión y recepción del transceptor.
-
-La tarea de RS485 actúa como intermediaria entre el driver y la lógica de aplicación y gestiona los datos recibidos y las solicitudes pendientes de transmisión. Las funciones \texttt{app\_rs485\_send()} y \texttt{app\_rs485\_receive()} proporcionan a \texttt{userTask} una interfaz bidireccional independiente de los detalles relacionados con la UART, las interrupciones y las señales de habilitación del transceptor. De este modo, la lógica del proceso puede intercambiar información con dispositivos externos mediante un servicio de comunicación uniforme.
 
 \begin{figure}[ht]
 	\centering
@@ -377,12 +373,11 @@ La tarea de RS485 actúa como intermediaria entre el driver y la lógica de apli
 	\label{fig:integracion_rs485}
 \end{figure}
 
+La tarea de RS485 actúa como intermediaria entre el driver y la lógica de aplicación y gestiona los datos recibidos y las solicitudes pendientes de transmisión. Las funciones \texttt{app\_rs485\_send()} y \texttt{app\_rs485\_receive()} proporcionan a \texttt{userTask} una interfaz bidireccional independiente de los detalles relacionados con la UART, las interrupciones y las señales de habilitación del transceptor. De este modo, la lógica del proceso puede intercambiar información con dispositivos externos mediante un servicio de comunicación uniforme.
 
 \subsection{Integración de la interfaz de radiofrecuencia}
 
 La integración de la comunicación inalámbrica, presentada en la figura \ref{fig:integracion_rf}, emplea el transceptor MRF24J40MA-I/RM conectado al microcontrolador mediante SPI. Las operaciones de acceso al dispositivo se realizan a través de la HAL y son encapsuladas por el driver MRF24J40, que proporciona las primitivas necesarias para la transmisión, recepción y gestión de los eventos generados por el transceptor.
-
-La tarea de radiofrecuencia concentra el procesamiento asociado al enlace inalámbrico y proporciona a las capas superiores una interfaz mediante las funciones \texttt{app\_radio\_send()} y \texttt{app\_radio\_receive()}. A través de estas funciones, \texttt{userTask} puede intercambiar información con otros nodos sin intervenir directamente en el acceso SPI, la atención de interrupciones ni la gestión interna del transceptor. Así, la comunicación inalámbrica queda integrada como un servicio disponible para la lógica específica del proceso productivo.
 
 \begin{figure}[ht]
 	\centering
@@ -390,3 +385,5 @@ La tarea de radiofrecuencia concentra el procesamiento asociado al enlace inalá
 	\caption{Integración hardware-software de la interfaz de radiofrecuencia.}
 	\label{fig:integracion_rf}
 \end{figure}
+
+La tarea de radiofrecuencia concentra el procesamiento asociado al enlace inalámbrico y proporciona a las capas superiores una interfaz mediante las funciones \texttt{app\_radio\_send()} y \texttt{app\_radio\_receive()}. A través de estas funciones, \texttt{userTask} puede intercambiar información con otros nodos sin intervenir directamente en el acceso SPI, la atención de interrupciones ni la gestión interna del transceptor. Así, la comunicación inalámbrica queda integrada como un servicio disponible para la lógica específica del proceso productivo.
