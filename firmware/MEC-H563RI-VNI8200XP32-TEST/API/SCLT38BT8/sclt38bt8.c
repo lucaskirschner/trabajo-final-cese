@@ -56,6 +56,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "main.h"
+
 #include "swo.h"
 
 /* ============================ Local Macros =============================== */
@@ -143,7 +145,16 @@ sclt38bt8_status_t sclt38bt8_read_inputs(uint8_t * const p_inputs)
     raw_word = sclt38bt8_build_word(rx_buffer);
 
     inputs = (uint8_t)((raw_word & SCLT38BT8_INPUTS_MASK) >> 8u);
-	printf("Inputs: 0x%02X\r\n", inputs);
+	//printf("Inputs: 0x%02X\r\n", inputs);
+
+	if(inputs != 0x00)
+	{
+		HAL_GPIO_WritePin(GPIO0_GPIO_Port, GPIO0_Pin, GPIO_PIN_SET);
+	}
+	else
+	{
+		HAL_GPIO_WritePin(GPIO0_GPIO_Port, GPIO0_Pin, GPIO_PIN_RESET);
+	}
 
     control_raw = (uint8_t)(raw_word & SCLT38BT8_CONTROL_MASK);
 

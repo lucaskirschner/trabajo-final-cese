@@ -1,15 +1,83 @@
-% Chapter Template
+\chapter{Ensayos y resultados}
+\label{Chapter4}
 
-\chapter{Ensayos y resultados} % Main chapter title
-
-\label{Chapter4} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
-Todos los capítulos deben comenzar con un breve párrafo introductorio que indique cuál es el contenido que se encontrará al leerlo.  La redacción sobre el contenido de la memoria debe hacerse en presente y todo lo referido al proyecto en pasado, siempre de modo impersonal.
+En este capítulo se presentan los ensayos realizados para verificar el funcionamiento del hardware y firmware desarrollados, así como su integración en el sistema completo. Las pruebas comprenden la evaluación de los principales bloques de hardware, las funciones implementadas en el firmware y la comunicación entre la estación central y las estaciones remotas. Finalmente, se analizan los resultados obtenidos y los principales desvíos y limitaciones identificados durante la validación.
 
 %----------------------------------------------------------------------------------------
-%	SECTION 1
+\section{Plan de ensayos}
+
+La validación del sistema se realizó siguiendo una metodología incremental, comenzando por la verificación individual de los distintos bloques de hardware y firmware y continuando con ensayos de integración entre ambos niveles. Finalmente, se consideran pruebas sobre el sistema completo, orientadas a comprobar el intercambio de información y la ejecución coordinada de las funciones implementadas entre la estación central y las estaciones remotas.
+
+Para cada ensayo se establecieron las condiciones iniciales, la configuración utilizada, el procedimiento de prueba y los resultados esperados. Las pruebas de hardware se orientaron principalmente a verificar las etapas de alimentación, las entradas y salidas digitales y las interfaces de comunicación. Los ensayos de firmware contemplan la comprobación de los controladores y servicios desarrollados, la ejecución de las tareas de FreeRTOS y la temporización de las operaciones relevantes. Por último, las pruebas de integración evalúan el funcionamiento conjunto de estos elementos mediante operaciones representativas del sistema.
+
+Los ensayos se realizaron en condiciones controladas de laboratorio empleando el instrumental y las herramientas de desarrollo indicados en la tabla \ref{tab:instrumental_ensayos}. Los criterios de aceptación se establecieron a partir de los requerimientos funcionales del sistema y de las especificaciones de los componentes utilizados. Según el tipo de ensayo, se consideraron los niveles de tensión y corriente, las características temporales de las señales, la correcta ejecución de las funciones y el intercambio de información entre los distintos módulos.
+
+\begin{table}[H]
+	\centering
+	\caption[Instrumental y herramientas utilizados en los ensayos]
+	{Instrumental y herramientas utilizados para la realización de los ensayos.}
+	\begin{tabular}{l l}
+		\toprule
+		\textbf{Instrumento o herramienta} & \textbf{Utilización} \\
+		\midrule
+		Fuente regulada de laboratorio
+		& Alimentación del sistema \\
+		
+		Multímetro digital
+		& Medición de tensión y corriente \\
+		
+		Osciloscopio digital
+		& Análisis temporal de señales \\
+		
+		Analizador lógico USB de 8 canales
+		& Análisis de señales digitales \\
+		
+		Generador de señales digitales
+		& Estimulación de entradas \\
+		
+		STLINK-V3MINIE
+		& Programación y depuración \\
+		
+		STM32CubeIDE
+		& Depuración del firmware \\
+		
+		Vistas de FreeRTOS
+		& Supervisión de objetos del RTOS \\
+		
+		Interfaz SWO
+		& Registro de eventos y variables \\
+		
+		Contador de ciclos DWT
+		& Medición de tiempos de ejecución \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:instrumental_ensayos}
+\end{table}
+
 %----------------------------------------------------------------------------------------
+\section{Ensayos de hardware}
 
-\section{Pruebas funcionales del hardware}
-\label{sec:pruebasHW}
+En esta sección se presentan los ensayos realizados sobre los principales bloques de hardware del sistema. Las pruebas comprenden la verificación de las tensiones de alimentación y el consumo de corriente, el funcionamiento de las entradas y salidas digitales y las señales asociadas a las interfaces de comunicación. Para cada ensayo se indican las condiciones de medición y los resultados obtenidos mediante el instrumental presentado en la sección anterior.
 
-La idea de esta sección es explicar cómo se hicieron los ensayos, qué resultados se obtuvieron y analizarlos.
+%----------------------------------------------------------------------------------------
+\subsection{Ensayo de las etapas de alimentación y consumo}
+
+Como primera etapa de validación del hardware se verificaron las principales tensiones de alimentación y el consumo de corriente de la placa. El sistema se alimentó con 24 V y se midieron mediante un multímetro digital las líneas de 5 V y 3,3 V, junto con la corriente consumida desde la alimentación principal. Esta última medición se realizó con la placa en estado de reposo, sin cargas externas conectadas ni operaciones activas de adquisición, actuación o comunicación. Los valores obtenidos se presentan en la tabla \ref{tab:alimentacion_consumo}.
+
+\begin{table}[h]
+	\centering
+	\caption[Mediciones de alimentación y consumo]{Mediciones de las tensiones de alimentación y del consumo de corriente de la placa.}
+	\begin{tabular}{l c c}
+		\toprule
+		\textbf{Magnitud} & \textbf{Nominal} & \textbf{Medido} \\
+		\midrule
+		Alimentación de entrada & 24 V  & 24 V \\
+		Alimentación de 5 V     & 5 V   & 5,02 V \\
+		Alimentación de 3,3 V   & 3,3 V & 3,31 V \\
+		Consumo a 24 V          & --    & 21 mA \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:alimentacion_consumo}
+\end{table}
+
+Los resultados obtenidos verifican el correcto funcionamiento de las etapas de alimentación en las condiciones consideradas, con niveles de 5 V y 3,3 V próximos a sus valores nominales y un consumo base de 21 mA sobre la alimentación de entrada de 24 V.
