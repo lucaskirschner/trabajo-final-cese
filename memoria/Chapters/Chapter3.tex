@@ -82,9 +82,7 @@ La conversión de energía se realiza mediante el módulo convertidor CC-CC aisl
 
 Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéticas, tanto la entrada como la salida del convertidor incorporan capacitores de desacople ubicados próximos al módulo. Estos elementos reducen el ruido conducido y estabilizan la tensión de alimentación, lo que contribuye al correcto funcionamiento de la electrónica digital.
 
-La protección de la entrada contempla múltiples mecanismos destinados a incrementar la confiabilidad del sistema. Un fusible de 10 A constituye la primera barrera frente a condiciones de sobrecorriente o cortocircuito, limitando la energía disponible durante una falla. A continuación, un diodo TVS de 26 V protege al convertidor frente a sobretensiones transitorias generadas sobre la línea de alimentación, mientras que un diodo \textit{Schottky} conectado en serie impide la circulación de corriente en sentido inverso, proporcionando protección frente a inversiones accidentales de polaridad y evitando daños sobre los circuitos posteriores.
-
-A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, lo que hace innecesario incorporar una segunda etapa de conversión conmutada.
+\newpage
 
 \begin{figure}[ht]
 	\centering
@@ -92,6 +90,10 @@ A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V util
 	\caption{Esquema eléctrico de la etapa de alimentación.}
 	\label{fig:pwr_schematic}
 \end{figure}
+
+La protección de la entrada contempla múltiples mecanismos destinados a incrementar la confiabilidad del sistema. Un fusible de 10 A constituye la primera barrera frente a condiciones de sobrecorriente o cortocircuito, limitando la energía disponible durante una falla. A continuación, un diodo TVS de 26 V protege al convertidor frente a sobretensiones transitorias generadas sobre la línea de alimentación, mientras que un diodo \textit{Schottky} conectado en serie impide la circulación de corriente en sentido inverso, proporcionando protección frente a inversiones accidentales de polaridad y evitando daños sobre los circuitos posteriores.
+
+A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, lo que hace innecesario incorporar una segunda etapa de conversión conmutada.
 
 \subsection{Entradas digitales}
 
