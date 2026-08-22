@@ -1,16 +1,16 @@
 \chapter{Ensayos y resultados}
 \label{Chapter4}
 
-En este capítulo se presentan los ensayos realizados para verificar el funcionamiento del hardware y firmware desarrollados, así como su integración en el sistema completo. Las pruebas comprenden la evaluación de los principales bloques de hardware, las funciones implementadas en el firmware y la comunicación entre la estación central y las estaciones remotas. Finalmente, se analizan los resultados obtenidos y los principales desvíos y limitaciones identificados durante la validación.
+En este capítulo se presentan los ensayos realizados para verificar el funcionamiento del hardware y del firmware desarrollados, así como su integración en el sistema completo. Las pruebas comprenden la evaluación de los principales bloques de hardware, las funciones implementadas en el firmware y la comunicación entre la estación central y las estaciones remotas. Finalmente, se analizan los resultados obtenidos y los principales desvíos y limitaciones identificados durante la validación.
 
 %----------------------------------------------------------------------------------------
 \section{Plan de ensayos}
 
-La validación del sistema se realizó siguiendo una metodología incremental, comenzando por la verificación individual de los distintos bloques de hardware y firmware y continuando con ensayos de integración entre ambos niveles. Finalmente, se consideran pruebas sobre el sistema completo, orientadas a comprobar el intercambio de información y la ejecución coordinada de las funciones implementadas entre la estación central y las estaciones remotas.
+La validación del sistema se realizó siguiendo una metodología incremental, que comenzó con la verificación individual de los distintos bloques de hardware y firmware y continuó con ensayos de integración entre ambos niveles. Finalmente, se realizaron pruebas sobre el sistema completo, orientadas a comprobar el intercambio de información y la ejecución coordinada de las funciones implementadas entre la estación central y las estaciones remotas.
 
-Para cada ensayo se establecieron las condiciones iniciales, la configuración utilizada, el procedimiento de prueba y los resultados esperados. Las pruebas de hardware se orientaron principalmente a verificar las etapas de alimentación, las entradas y salidas digitales y las interfaces de comunicación. Los ensayos de firmware contemplan la comprobación de los controladores y servicios desarrollados, la ejecución de las tareas de FreeRTOS y la temporización de las operaciones relevantes. Por último, las pruebas de integración evalúan el funcionamiento conjunto de estos elementos mediante operaciones representativas del sistema.
+Para cada ensayo se establecieron las condiciones iniciales, la configuración utilizada, el procedimiento de prueba y los resultados esperados. Las pruebas de hardware se orientaron principalmente a verificar las etapas de alimentación, las entradas y salidas digitales y las interfaces de comunicación. Los ensayos de firmware contemplaron la comprobación de los controladores y servicios desarrollados, la ejecución de las tareas de FreeRTOS y la temporización de las operaciones relevantes. Por último, las pruebas de integración evaluaron el funcionamiento conjunto de estos elementos mediante operaciones representativas del sistema.
 
-Los ensayos se realizaron en condiciones controladas de laboratorio empleando el instrumental y las herramientas de desarrollo indicados en la tabla \ref{tab:instrumental_ensayos}. Los criterios de aceptación se establecieron a partir de los requerimientos funcionales del sistema y de las especificaciones de los componentes utilizados. Según el tipo de ensayo, se consideraron los niveles de tensión y corriente, las características temporales de las señales, la correcta ejecución de las funciones y el intercambio de información entre los distintos módulos.
+Los ensayos se realizaron en condiciones controladas de laboratorio mediante el instrumental y las herramientas de desarrollo indicados en la tabla \ref{tab:instrumental_ensayos}. La figura \ref{fig:banco_ensayos} muestra el banco de trabajo utilizado para su realización. Los criterios de aceptación se establecieron a partir de los requerimientos funcionales del sistema y de las especificaciones de los componentes utilizados. Según el tipo de ensayo, se consideraron los niveles de tensión y corriente, las características temporales de las señales, la correcta ejecución de las funciones y el intercambio de información entre los distintos módulos.
 
 \begin{table}[H]
 	\centering
@@ -54,6 +54,13 @@ Los ensayos se realizaron en condiciones controladas de laboratorio empleando el
 	\label{tab:instrumental_ensayos}
 \end{table}
 
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1.0\textwidth]{Figures/banco_ensayos.jpeg}
+	\caption{Banco de trabajo e instrumental utilizado para la realización de los ensayos.}
+	\label{fig:banco_ensayos}
+\end{figure}
+
 %----------------------------------------------------------------------------------------
 \section{Ensayos de hardware}
 
@@ -62,7 +69,7 @@ En esta sección se presentan los ensayos realizados sobre los principales bloqu
 %----------------------------------------------------------------------------------------
 \subsection{Ensayo de las etapas de alimentación y consumo}
 
-Como primera etapa de validación del hardware se verificaron las principales tensiones de alimentación y el consumo de corriente de la placa. El sistema se alimentó con 24 V y se midieron mediante un multímetro digital las líneas de 5 V y 3,3 V, junto con la corriente consumida desde la alimentación principal. Esta última medición se realizó con la placa en estado de reposo, sin cargas externas conectadas ni operaciones activas de adquisición, actuación o comunicación. Los valores obtenidos se presentan en la tabla \ref{tab:alimentacion_consumo}.
+Como primera etapa de validación del hardware, se verificaron las principales tensiones de alimentación y el consumo de corriente de la placa. El sistema se alimentó con 24 V y se midieron, mediante un multímetro digital, las líneas de 5 V y 3,3 V, junto con la corriente consumida desde la alimentación principal. Esta última medición se realizó con la placa en estado de reposo, sin cargas externas conectadas ni operaciones activas de adquisición, actuación o comunicación. Los valores obtenidos se presentan en la tabla \ref{tab:alimentacion_consumo}.
 
 \begin{table}[h]
 	\centering
@@ -80,4 +87,20 @@ Como primera etapa de validación del hardware se verificaron las principales te
 	\label{tab:alimentacion_consumo}
 \end{table}
 
-Los resultados obtenidos verifican el correcto funcionamiento de las etapas de alimentación en las condiciones consideradas, con niveles de 5 V y 3,3 V próximos a sus valores nominales y un consumo base de 21 mA sobre la alimentación de entrada de 24 V.
+Los resultados obtenidos permitieron verificar el correcto funcionamiento de las etapas de alimentación en las condiciones consideradas. Las líneas de 5 V y 3,3 V presentaron valores próximos a sus niveles nominales, mientras que el consumo base medido sobre la alimentación de entrada de 24 V fue de 21 mA.
+
+%----------------------------------------------------------------------------------------
+\subsection{Ensayo de la etapa de entradas digitales}
+
+Para verificar el funcionamiento de la etapa de entradas digitales, se aplicó sobre el canal 1 una señal cuadrada de 10 Hz con niveles de 0 V y 24 V, generada mediante el generador de señales del banco de ensayos. Estos niveles son compatibles con las características de entrada establecidas para el SCLT3-8BT8 y permiten evaluar su funcionamiento con señales industriales de 24 V.
+
+Durante el ensayo, el microcontrolador realizó periódicamente la lectura de las entradas digitales mediante la interfaz SPI del SCLT3-8BT8 dentro de un \textit{superloop}. El estado obtenido para el canal 1 se replicó sobre el pin GPIO0 de la placa, lo que permitió comparar directamente la señal aplicada con el estado reconocido por el sistema.
+
+La figura \ref{fig:ensayo_entradas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la señal de 0--24 V aplicada a la entrada digital, mientras que el canal 2 corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la correcta detección de los niveles lógicos por el SCLT3-8BT8, la adquisición de su estado mediante SPI y su posterior procesamiento por el microcontrolador.
+
+\begin{figure}[ht]
+	\centering
+	\includegraphics[width=0.9\textwidth]{Figures/digital_inputs.png}
+	\caption{Señal aplicada a la entrada digital 1 y estado correspondiente replicado sobre el pin GPIO0.}
+	\label{fig:ensayo_entradas_digitales}
+\end{figure}

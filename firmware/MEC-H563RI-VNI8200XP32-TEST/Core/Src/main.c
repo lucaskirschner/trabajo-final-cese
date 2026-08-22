@@ -121,7 +121,7 @@ int main(void)
   /* Init main*/
   printf("Init main \r\n");
 
-  //HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GR_LED_GPIO_Port, GR_LED_Pin, GPIO_PIN_RESET);
 
   /* USER CODE END 2 */
 
