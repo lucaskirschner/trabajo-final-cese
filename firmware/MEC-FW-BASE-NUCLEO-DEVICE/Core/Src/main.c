@@ -151,10 +151,10 @@ int main(void)
   printf("BOOT\r\n");
 
   /* Para toggle del led amarillo */
-  HAL_TIM_Base_Start_IT(&htim6);
+  //HAL_TIM_Base_Start_IT(&htim6);
 
-  app_init();
-  //IO_AppInit();
+  //app_init();
+  IO_AppInit();
 
   /* USER CODE END 2 */
 
@@ -162,8 +162,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  app_task();
-	  //IO_AppTask();
+	  //app_task();
+	  IO_AppTask();
 
     /* USER CODE END WHILE */
 
@@ -468,7 +468,7 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(YE_LED_GPIO_Port, YE_LED_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GR_LED_GPIO_Port, GR_LED_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GR_LED_Pin|TEST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_RESET);
@@ -507,12 +507,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(INT_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : GR_LED_Pin */
-  GPIO_InitStruct.Pin = GR_LED_Pin;
+  /*Configure GPIO pins : GR_LED_Pin TEST_Pin */
+  GPIO_InitStruct.Pin = GR_LED_Pin|TEST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GR_LED_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : OUT_EN_Pin */
   GPIO_InitStruct.Pin = OUT_EN_Pin;
@@ -659,7 +659,7 @@ static void IO_AppInit(void)
 
 static void IO_AppTask(void)
 {
-    static uint8_t outputs = 0u;
+    /*static uint8_t outputs = 0u;
 
     uint8_t inputs = 0u;
     sclt38bt8_status_t sclt_status;
@@ -690,7 +690,28 @@ static void IO_AppTask(void)
     outputs++;
     if(outputs > 255) outputs = 0;
 
-    HAL_Delay(500);
+    HAL_Delay(500);*/
+
+	vni8200xp32_status_t vni_status;
+
+	for(;;)
+	{
+		vni_status = vni8200xp32_write_outputs(0xFF);
+		HAL_GPIO_WritePin(TEST_GPIO_Port, TEST_Pin, GPIO_PIN_SET);
+		if (vni_status != VNI8200XP32_OK)
+		{
+			printf("VNI error: %d\r\n", (int)vni_status);
+		}
+		HAL_Delay(500);
+
+		vni_status = vni8200xp32_write_outputs(0x00);
+		HAL_GPIO_WritePin(TEST_GPIO_Port, TEST_Pin, GPIO_PIN_RESET);
+		if (vni_status != VNI8200XP32_OK)
+		{
+			printf("VNI error: %d\r\n", (int)vni_status);
+		}
+		HAL_Delay(500);
+	}
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)

@@ -129,15 +129,21 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	/*status = vni8200xp32_write_outputs(0xFF);
-
+	status = vni8200xp32_write_outputs(0x00);
+	HAL_GPIO_WritePin(GPIO0_GPIO_Port, GPIO0_Pin, GPIO_PIN_RESET);
 	printf("Status: %s (%d)\r\n",
 		   vni8200xp32_status_str(status),
-		   (int)status);*/
+		   (int)status);
+	HAL_Delay(50);
 
-	sclt38bt8_read_inputs(&p_inputs);
+	status = vni8200xp32_write_outputs(0xFF);
+	HAL_GPIO_WritePin(GPIO0_GPIO_Port, GPIO0_Pin, GPIO_PIN_SET);
+	printf("Status: %s (%d)\r\n",
+		   vni8200xp32_status_str(status),
+		   (int)status);
+	HAL_Delay(50);
 
-	//HAL_Delay(1000);
+	//sclt38bt8_read_inputs(&p_inputs);
 
     /* USER CODE END WHILE */
 

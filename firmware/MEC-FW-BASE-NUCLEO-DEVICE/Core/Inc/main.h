@@ -87,6 +87,8 @@ void Error_Handler(void);
 #define SPI3_CS_MRF_GPIO_Port GPIOA
 #define WAKE_Pin GPIO_PIN_2
 #define WAKE_GPIO_Port GPIOD
+#define TEST_Pin GPIO_PIN_8
+#define TEST_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 

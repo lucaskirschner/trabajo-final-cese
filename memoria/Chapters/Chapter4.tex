@@ -96,11 +96,32 @@ Para verificar el funcionamiento de la etapa de entradas digitales, se aplicó s
 
 Durante el ensayo, el microcontrolador realizó periódicamente la lectura de las entradas digitales mediante la interfaz SPI del SCLT3-8BT8 dentro de un \textit{superloop}. El estado obtenido para el canal 1 se replicó sobre el pin GPIO0 de la placa, lo que permitió comparar directamente la señal aplicada con el estado reconocido por el sistema.
 
-La figura \ref{fig:ensayo_entradas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la señal de 0--24 V aplicada a la entrada digital, mientras que el canal 2 corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la correcta detección de los niveles lógicos por el SCLT3-8BT8, la adquisición de su estado mediante SPI y su posterior procesamiento por el microcontrolador.
+La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_entradas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la señal de 0--24 V aplicada a la entrada digital, mientras que el canal 2 (celeste) corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la correcta detección de los niveles lógicos por el SCLT3-8BT8, la adquisición de su estado mediante SPI y su posterior procesamiento por el microcontrolador.
 
-\begin{figure}[ht]
+%----------------------------------------------------------------------------------------
+\subsection{Ensayo de la etapa de salidas digitales}
+
+Para verificar el funcionamiento de la etapa de salidas digitales, se configuró la conmutación periódica del canal de salida 1 con una frecuencia de 1 Hz. Simultáneamente, el estado lógico comandado por el microcontrolador se replicó sobre el pin GPIO0 de la placa, lo que permitió comparar la señal de control con la salida industrial correspondiente.
+
+Durante el ensayo, el microcontrolador actualizó periódicamente el estado de las salidas digitales mediante la interfaz SPI del VNI8200XP-32 dentro de un \textit{superloop}. De esta manera, se verificó conjuntamente la comunicación con el dispositivo y la correcta conmutación del canal de salida entre los niveles de 0 V y 24 V.
+
+La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la salida industrial de 24 V, mientras que el canal 2 (celeste) corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la correcta transmisión del estado mediante SPI, su procesamiento por el VNI8200XP-32 y la conmutación de la salida industrial de acuerdo con el estado establecido por el microcontrolador.
+
+\begin{figure}[!htpb]
 	\centering
-	\includegraphics[width=0.9\textwidth]{Figures/digital_inputs.png}
-	\caption{Señal aplicada a la entrada digital 1 y estado correspondiente replicado sobre el pin GPIO0.}
-	\label{fig:ensayo_entradas_digitales}
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/digital_inputs.png}
+		\caption{Ensayo de la entrada digital.}
+		\label{fig:ensayo_entradas_digitales}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/digital_outputs.png}
+		\caption{Ensayo de la salida digital.}
+		\label{fig:ensayo_salidas_digitales}
+	\end{subfigure}
+	\caption[Ensayos de las entradas y salidas digitales]{Señales registradas durante los ensayos de las etapas de entradas y salidas digitales.}
+	\label{fig:ensayos_io_digitales}
 \end{figure}
