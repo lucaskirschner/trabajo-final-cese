@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "swo.h"
+#include <stdbool.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,7 +45,14 @@
 UART_HandleTypeDef huart7;
 
 /* USER CODE BEGIN PV */
-static uint8_t rs485_rx_byte = 0u;
+#define RS485_FRAME_SIZE    8u
+
+static uint8_t rs485_rx_buffer[RS485_FRAME_SIZE];
+
+static const uint8_t rs485_expected_frame[RS485_FRAME_SIZE] =
+{
+    0xAA, 0x55, 0x01, 0x02, 0x03, 0x04, 0x12, 0x34
+};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -99,10 +107,12 @@ int main(void)
   HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(RS485_RE_GPIO_Port, RS485_RE_Pin, GPIO_PIN_RESET);
 
-  /* Start interrupt-driven reception of one byte */
-  if (HAL_UART_Receive_IT(&huart7, &rs485_rx_byte, 1u) != HAL_OK)
+  /* Start interrupt-driven reception of one complete frame */
+  if (HAL_UART_Receive_IT(&huart7,
+                          rs485_rx_buffer,
+                          RS485_FRAME_SIZE) != HAL_OK)
   {
-    Error_Handler();
+      Error_Handler();
   }
 
   /* USER CODE END 2 */
@@ -251,66 +261,95 @@ static void MX_GPIO_Init(void)
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (huart->Instance == UART7)
-  {
-	/*
-	 * Report received byte through SWO.
-	 */
-	printf("[RS485] RX: 0x%02X ('%c')\r\n", rs485_rx_byte, rs485_rx_byte);
-
-    /*
-     * Switch RS485 transceiver to transmit mode:
-     * DE  = 1
-     * /RE = 1
-     */
-    HAL_GPIO_WritePin(RS485_RE_GPIO_Port, RS485_RE_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_SET);
-
-    /*
-     * Echo the received byte.
-     */
-    if (HAL_UART_Transmit_IT(&huart7, &rs485_rx_byte, 1u) != HAL_OK)
+    if (huart->Instance == UART7)
     {
-      Error_Handler();
+        bool frame_ok = true;
+
+        printf("[RS485] RX: ");
+
+        for (uint8_t i = 0u; i < RS485_FRAME_SIZE; i++)
+        {
+            printf("%02X ", rs485_rx_buffer[i]);
+
+            if (rs485_rx_buffer[i] != rs485_expected_frame[i])
+            {
+                frame_ok = false;
+            }
+        }
+
+        printf("\r\n");
+
+        if (frame_ok)
+        {
+            printf("[RS485] FRAME OK\r\n");
+        }
+        else
+        {
+            printf("[RS485] FRAME ERROR\r\n");
+        }
+
+        /*
+         * Switch transceiver to transmit mode:
+         * DE  = 1
+         * /RE = 1
+         */
+        HAL_GPIO_WritePin(RS485_RE_GPIO_Port,
+                          RS485_RE_Pin,
+                          GPIO_PIN_SET);
+
+        HAL_GPIO_WritePin(RS485_DE_GPIO_Port,
+                          RS485_DE_Pin,
+                          GPIO_PIN_SET);
+
+        /*
+         * Echo complete received frame.
+         */
+        if (HAL_UART_Transmit_IT(&huart7,
+                                 rs485_rx_buffer,
+                                 RS485_FRAME_SIZE) != HAL_OK)
+        {
+            Error_Handler();
+        }
     }
-  }
 }
 
-/**
-  * @brief UART transmission-complete callback.
-  *
-  * @param huart UART handle associated with the completed transmission.
-  *
-  * @details
-  * When transmission through UART7 completes, this callback reports the
-  * transmitted byte through SWO, returns the RS485 transceiver to receive mode
-  * and starts reception of the next byte.
-  */
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if (huart->Instance == UART7)
-  {
-	/*
-	 * Report received byte through SWO.
-	 */
-	printf("[RS485] TX complete: 0x%02X ('%c')\r\n", rs485_rx_byte, rs485_rx_byte);
-
-    /*
-     * Return RS485 transceiver to receive mode:
-     * DE  = 0
-     * /RE = 0
-     */
-    HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(RS485_RE_GPIO_Port, RS485_RE_Pin, GPIO_PIN_RESET);
-
-    /*
-     * Arm reception of the next byte.
-     */
-    if (HAL_UART_Receive_IT(&huart7, &rs485_rx_byte, 1u) != HAL_OK)
+    if (huart->Instance == UART7)
     {
-      Error_Handler();
+        printf("[RS485] TX: ");
+
+        for (uint8_t i = 0u; i < RS485_FRAME_SIZE; i++)
+        {
+            printf("%02X ", rs485_rx_buffer[i]);
+        }
+
+        printf("\r\n");
+        printf("[RS485] TX complete\r\n\r\n");
+
+        /*
+         * Return transceiver to receive mode:
+         * DE  = 0
+         * /RE = 0
+         */
+        HAL_GPIO_WritePin(RS485_DE_GPIO_Port,
+                          RS485_DE_Pin,
+                          GPIO_PIN_RESET);
+
+        HAL_GPIO_WritePin(RS485_RE_GPIO_Port,
+                          RS485_RE_Pin,
+                          GPIO_PIN_RESET);
+
+        /*
+         * Arm reception of next complete frame.
+         */
+        if (HAL_UART_Receive_IT(&huart7,
+                                rs485_rx_buffer,
+                                RS485_FRAME_SIZE) != HAL_OK)
+        {
+            Error_Handler();
+        }
     }
-  }
 }
 
 /**
@@ -343,9 +382,11 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart)
      */
     (void)HAL_UART_Abort(&huart7);
 
-    if (HAL_UART_Receive_IT(&huart7,&rs485_rx_byte,1u) != HAL_OK)
+    if (HAL_UART_Receive_IT(&huart7,
+                            rs485_rx_buffer,
+                            RS485_FRAME_SIZE) != HAL_OK)
     {
-      Error_Handler();
+        Error_Handler();
     }
   }
 }

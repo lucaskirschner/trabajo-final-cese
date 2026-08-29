@@ -125,3 +125,34 @@ La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} mu
 	\caption[Ensayos de las entradas y salidas digitales]{Señales registradas durante los ensayos de las etapas de entradas y salidas digitales.}
 	\label{fig:ensayos_io_digitales}
 \end{figure}
+
+%----------------------------------------------------------------------------------------
+\subsection{Ensayo de la interfaz RS485}
+
+Para verificar el funcionamiento de la interfaz RS485, se conectó la placa a una computadora mediante un adaptador USB--RS485 y se configuró la comunicación a 115200 bit/s, con 8 bits de datos, sin paridad y un bit de parada. Desde RealTerm se transmitió la trama de 8 bytes \texttt{AA 55 01 02 03 04 12 34}, seleccionada por contener valores fácilmente identificables y bytes sin representación ASCII, lo que permite comprobar la transmisión de información binaria sin alteraciones.
+
+Durante el ensayo, el microcontrolador recibió la trama completa mediante UART7, verificó su correspondencia con la secuencia esperada y registró el resultado mediante SWO. A continuación, el transceptor RS485 se conmutó a modo de transmisión y la misma trama fue retransmitida hacia la computadora, retornando posteriormente al modo de recepción.
+
+La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura \ref{fig:rs485_realterm} se observa en RealTerm la trama retransmitida por la placa, mientras que en la figura \ref{fig:rs485_swo} se presenta el registro generado mediante SWO durante su recepción, validación y retransmisión. La coincidencia entre las tramas transmitida y recibida permitió comprobar el funcionamiento bidireccional de la interfaz RS485 y la correcta conmutación entre los modos de recepción y transmisión.
+
+\begin{figure}[!htpb]
+	\centering
+	\begin{subfigure}[b]{0.9\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/rs485_realterm.png}
+		\caption{Trama retransmitida visualizada mediante RealTerm.}
+		\label{fig:rs485_realterm}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+	
+	\begin{subfigure}[b]{0.9\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/rs485_swo.png}
+		\caption{Registro de recepción, validación y retransmisión mediante SWO.}
+		\label{fig:rs485_swo}
+	\end{subfigure}
+	
+	\caption[Ensayo de la interfaz RS485]{Resultados del ensayo de transmisión y recepción mediante la interfaz RS485.}
+	\label{fig:ensayo_rs485}
+\end{figure}

@@ -1,0 +1,21 @@
+Configuración de RealTerm
+
+Port ->
+
+Port:        COMx
+Baud:        115200
+Data Bits:   8 bits
+Stop Bits:   1 bit
+Parity:      None
+Hardware Flow Control: None
+Software Flow Control:
+    Receive:  Off
+    Transmit: Off
+
+Display ->
+
+Display As:  ASCII
+
+Echo Port ->
+
+Echo:        Off
