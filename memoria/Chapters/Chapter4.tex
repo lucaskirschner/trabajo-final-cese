@@ -10,7 +10,7 @@ La validación del sistema se realizó siguiendo una metodología incremental, q
 
 Para cada ensayo se establecieron las condiciones iniciales, la configuración utilizada, el procedimiento de prueba y los resultados esperados. Las pruebas de hardware se orientaron principalmente a verificar las etapas de alimentación, las entradas y salidas digitales y las interfaces de comunicación. Los ensayos de firmware contemplaron la comprobación de los controladores y servicios desarrollados, la ejecución de las tareas de FreeRTOS y la temporización de las operaciones relevantes. Por último, las pruebas de integración evaluaron el funcionamiento conjunto de estos elementos mediante operaciones representativas del sistema.
 
-Los ensayos se realizaron en condiciones controladas de laboratorio mediante el instrumental y las herramientas de desarrollo indicados en la tabla \ref{tab:instrumental_ensayos}. La figura \ref{fig:banco_ensayos} muestra el banco de trabajo utilizado para su realización. Los criterios de aceptación se establecieron a partir de los requerimientos funcionales del sistema y de las especificaciones de los componentes utilizados. Según el tipo de ensayo, se consideraron los niveles de tensión y corriente, las características temporales de las señales, la correcta ejecución de las funciones y el intercambio de información entre los distintos módulos.
+Los ensayos se realizaron en condiciones controladas de laboratorio mediante el instrumental y las herramientas de desarrollo indicados en la tabla \ref{tab:instrumental_ensayos}. La figura \ref{fig:banco_ensayos} muestra el banco de trabajo utilizado. Los criterios de aceptación se establecieron a partir de los requerimientos funcionales del sistema y de las especificaciones de los componentes utilizados. Según el tipo de ensayo, se consideraron los niveles de tensión y corriente, las características temporales de las señales, la correcta ejecución de las funciones y el intercambio de información entre los distintos módulos.
 
 \begin{table}[H]
 	\centering
@@ -92,20 +92,16 @@ Los resultados obtenidos permitieron verificar el correcto funcionamiento de las
 %----------------------------------------------------------------------------------------
 \subsection{Ensayo de la etapa de entradas digitales}
 
-Para verificar el funcionamiento de la etapa de entradas digitales, se aplicó sobre el canal 1 una señal cuadrada de 10 Hz con niveles de 0 V y 24 V, generada mediante el generador de señales del banco de ensayos. Estos niveles son compatibles con las características de entrada establecidas para el SCLT3-8BT8 y permiten evaluar su funcionamiento con señales industriales de 24 V.
+Para verificar el funcionamiento de la etapa de entradas digitales, se aplicó sobre el canal 1 una señal cuadrada de 10 Hz con niveles de 0 V y 24 V. El microcontrolador realizó periódicamente la lectura mediante la interfaz SPI del SCLT3-8BT8 dentro de un \textit{superloop} y replicó el estado detectado sobre el pin GPIO0 de la placa.
 
-Durante el ensayo, el microcontrolador realizó periódicamente la lectura de las entradas digitales mediante la interfaz SPI del SCLT3-8BT8 dentro de un \textit{superloop}. El estado obtenido para el canal 1 se replicó sobre el pin GPIO0 de la placa, lo que permitió comparar directamente la señal aplicada con el estado reconocido por el sistema.
-
-La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_entradas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la señal de 0--24 V aplicada a la entrada digital, mientras que el canal 2 (celeste) corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la correcta detección de los niveles lógicos por el SCLT3-8BT8, la adquisición de su estado mediante SPI y su posterior procesamiento por el microcontrolador.
+La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_entradas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la señal aplicada a la entrada digital, mientras que el canal 2 (celeste) corresponde al estado obtenido en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la detección de los niveles de 0 V y 24 V, su adquisición mediante SPI y su posterior procesamiento por el microcontrolador.
 
 %----------------------------------------------------------------------------------------
 \subsection{Ensayo de la etapa de salidas digitales}
 
-Para verificar el funcionamiento de la etapa de salidas digitales, se configuró la conmutación periódica del canal de salida 1 con una frecuencia de 1 Hz. Simultáneamente, el estado lógico comandado por el microcontrolador se replicó sobre el pin GPIO0 de la placa, lo que permitió comparar la señal de control con la salida industrial correspondiente.
+Para verificar el funcionamiento de la etapa de salidas digitales, se configuró la conmutación periódica del canal 1 a una frecuencia de 1 Hz. El microcontrolador actualizó su estado mediante la interfaz SPI del VNI8200XP-32 dentro de un \textit{superloop} y replicó simultáneamente el estado lógico comandado sobre el pin GPIO0 de la placa.
 
-Durante el ensayo, el microcontrolador actualizó periódicamente el estado de las salidas digitales mediante la interfaz SPI del VNI8200XP-32 dentro de un \textit{superloop}. De esta manera, se verificó conjuntamente la comunicación con el dispositivo y la correcta conmutación del canal de salida entre los niveles de 0 V y 24 V.
-
-La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la salida industrial de 24 V, mientras que el canal 2 (celeste) corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la correcta transmisión del estado mediante SPI, su procesamiento por el VNI8200XP-32 y la conmutación de la salida industrial de acuerdo con el estado establecido por el microcontrolador.
+La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la salida industrial de 24 V, mientras que el canal 2 (celeste) corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la transmisión del estado mediante SPI y la conmutación de la salida industrial de acuerdo con el comando establecido por el microcontrolador.
 
 \begin{figure}[!htpb]
 	\centering
@@ -129,13 +125,13 @@ La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} mu
 %----------------------------------------------------------------------------------------
 \subsection{Ensayo de la interfaz RS485}
 
-Para verificar el funcionamiento de la interfaz RS485, se conectó la placa a una computadora mediante un adaptador USB--RS485 y se configuró la comunicación a 115200 bit/s, con 8 bits de datos, sin paridad y un bit de parada. Desde RealTerm se transmitió la trama de 8 bytes \texttt{AA 55 01 02 03 04 12 34}, seleccionada por contener valores fácilmente identificables y bytes sin representación ASCII, lo que permite comprobar la transmisión de información binaria sin alteraciones.
+Para verificar el funcionamiento de la interfaz RS485, se conectó la placa a una computadora mediante un adaptador USB--RS485 y se configuró la comunicación a 115200 bit/s, con 8 bits de datos, sin paridad y un bit de parada. Desde RealTerm se transmitió la trama de 8 bytes \texttt{AA 55 01 02 03 04 12 34} para comprobar el intercambio de información binaria sin alteraciones.
 
-Durante el ensayo, el microcontrolador recibió la trama completa mediante UART7, verificó su correspondencia con la secuencia esperada y registró el resultado mediante SWO. A continuación, el transceptor RS485 se conmutó a modo de transmisión y la misma trama fue retransmitida hacia la computadora, retornando posteriormente al modo de recepción.
+El microcontrolador recibió la trama mediante UART7, verificó su correspondencia con la secuencia esperada y registró el resultado mediante SWO. A continuación, el transceptor RS485 se conmutó a modo de transmisión y retransmitió la misma trama hacia la computadora, retornando luego al modo de recepción.
 
-La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura \ref{fig:rs485_realterm} se observa en RealTerm la trama retransmitida por la placa, mientras que en la figura \ref{fig:rs485_swo} se presenta el registro generado mediante SWO durante su recepción, validación y retransmisión. La coincidencia entre las tramas transmitida y recibida permitió comprobar el funcionamiento bidireccional de la interfaz RS485 y la correcta conmutación entre los modos de recepción y transmisión.
+La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura \ref{fig:rs485_realterm} se observa la trama retransmitida en RealTerm y, en la figura \ref{fig:rs485_swo}, el registro de su recepción, validación y retransmisión mediante SWO. La coincidencia entre ambas tramas permitió comprobar la comunicación bidireccional y la correcta conmutación entre los modos de recepción y transmisión.
 
-\begin{figure}[!htpb]
+\begin{figure}[ht]
 	\centering
 	\begin{subfigure}[b]{0.9\textwidth}
 		\centering
@@ -144,7 +140,7 @@ La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura 
 		\label{fig:rs485_realterm}
 	\end{subfigure}
 	
-	\vspace{0.5cm}
+	\vspace{0.3cm}
 	
 	\begin{subfigure}[b]{0.9\textwidth}
 		\centering
@@ -155,4 +151,35 @@ La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura 
 	
 	\caption[Ensayo de la interfaz RS485]{Resultados del ensayo de transmisión y recepción mediante la interfaz RS485.}
 	\label{fig:ensayo_rs485}
+\end{figure}
+
+%----------------------------------------------------------------------------------------
+\subsection{Ensayo de la interfaz inalámbrica}
+
+Para verificar el funcionamiento de la interfaz inalámbrica, se realizó una prueba de comunicación punto a punto entre dos placas equipadas con transceptores MRF24J40. Una de ellas se configuró como dispositivo con dirección corta \texttt{0x0002}, mientras que la segunda se configuró como coordinador con dirección \texttt{0x0001}. Ambos nodos utilizaron el identificador de red PAN \texttt{0x1234}.
+
+Durante el ensayo, el dispositivo transmitió la trama de prueba de 12 bytes \texttt{41 88 01 34 12 01 00 02 00 01 02 03}. La transmisión se inició mediante una interrupción externa asociada al pulsador de usuario y se realizó sin solicitud de ACK. La finalización de la transmisión fue detectada mediante la interrupción generada por el MRF24J40 y registrada mediante SWO. En el coordinador, la recepción generó una nueva interrupción del transceptor, tras la cual se leyó la FIFO y se registraron la longitud y el contenido de la trama recibida.
+
+La figura \ref{fig:ensayo_radio} muestra los registros obtenidos durante el ensayo. En la figura \ref{fig:radio_tx_swo} se observa la trama enviada por el dispositivo y la finalización de la transmisión, mientras que en la figura \ref{fig:radio_rx_swo} se presenta la trama recibida por el coordinador. La coincidencia entre los 12 bytes transmitidos y recibidos permitió comprobar la correcta comunicación inalámbrica entre ambos nodos, así como el funcionamiento de la interfaz SPI y de las interrupciones utilizadas para gestionar el MRF24J40.
+
+\begin{figure}[!htpb]
+	\centering
+	\begin{subfigure}[b]{0.9\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/radio_tx_swo.png}
+		\caption{Registro de la transmisión en el nodo dispositivo mediante SWO.}
+		\label{fig:radio_tx_swo}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+	
+	\begin{subfigure}[b]{0.9\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/radio_rx_swo.png}
+		\caption{Registro de la recepción en el nodo coordinador mediante SWO.}
+		\label{fig:radio_rx_swo}
+	\end{subfigure}
+	
+	\caption[Ensayo de la interfaz inalámbrica]{Registros obtenidos durante el ensayo de comunicación punto a punto mediante IEEE 802.15.4.}
+	\label{fig:ensayo_radio}
 \end{figure}

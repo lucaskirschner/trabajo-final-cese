@@ -16,6 +16,7 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
+
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
@@ -60,29 +61,21 @@ typedef struct
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-
 SPI_HandleTypeDef hspi3;
-
 TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
-
 static mrf24j40_packet_t tx_packet;
 static mrf24j40_packet_t rx_packet;
-
 static bool tx_flag;
-
 static mrf24j40_task_config_t radio_cfg;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,16 +84,18 @@ static void MX_GPIO_Init(void);
 static void MX_ICACHE_Init(void);
 static void MX_SPI3_Init(void);
 static void MX_TIM6_Init(void);
+
 /* USER CODE BEGIN PFP */
 static void app_init(void);
 static void app_task(void);
 static void app_build_test_frame(void);
-
+static void app_print_frame(const char *prefix,
+                            const uint8_t *frame,
+                            uint8_t length);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 /* USER CODE END 0 */
 
 /**
@@ -109,9 +104,7 @@ static void app_build_test_frame(void);
   */
 int main(void)
 {
-
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -120,14 +113,12 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
   /* USER CODE END Init */
 
   /* Configure the system clock */
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -135,8 +126,8 @@ int main(void)
   MX_ICACHE_Init();
   MX_SPI3_Init();
   MX_TIM6_Init();
+
   /* USER CODE BEGIN 2 */
-  printf("BOOT\r\n");
 
   /* Para toggle del led amarillo */
   HAL_TIM_Base_Start_IT(&htim6);
@@ -149,7 +140,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  app_task();
+      app_task();
 
     /* USER CODE END WHILE */
 
@@ -189,6 +180,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLRGE = RCC_PLL1_VCIRANGE_2;
   RCC_OscInitStruct.PLL.PLLVCOSEL = RCC_PLL1_VCORANGE_WIDE;
   RCC_OscInitStruct.PLL.PLLFRACN = 0;
+
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -199,6 +191,7 @@ void SystemClock_Config(void)
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2
                               |RCC_CLOCKTYPE_PCLK3;
+
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV2;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -222,13 +215,10 @@ void SystemClock_Config(void)
   */
 static void MX_ICACHE_Init(void)
 {
-
   /* USER CODE BEGIN ICACHE_Init 0 */
-
   /* USER CODE END ICACHE_Init 0 */
 
   /* USER CODE BEGIN ICACHE_Init 1 */
-
   /* USER CODE END ICACHE_Init 1 */
 
   /** Enable instruction cache in 1-way (direct mapped cache)
@@ -237,14 +227,14 @@ static void MX_ICACHE_Init(void)
   {
     Error_Handler();
   }
+
   if (HAL_ICACHE_Enable() != HAL_OK)
   {
     Error_Handler();
   }
+
   /* USER CODE BEGIN ICACHE_Init 2 */
-
   /* USER CODE END ICACHE_Init 2 */
-
 }
 
 /**
@@ -254,14 +244,12 @@ static void MX_ICACHE_Init(void)
   */
 static void MX_SPI3_Init(void)
 {
-
   /* USER CODE BEGIN SPI3_Init 0 */
-
   /* USER CODE END SPI3_Init 0 */
 
   /* USER CODE BEGIN SPI3_Init 1 */
-
   /* USER CODE END SPI3_Init 1 */
+
   /* SPI3 parameter configuration*/
   hspi3.Instance = SPI3;
   hspi3.Init.Mode = SPI_MODE_MASTER;
@@ -285,14 +273,14 @@ static void MX_SPI3_Init(void)
   hspi3.Init.IOSwap = SPI_IO_SWAP_DISABLE;
   hspi3.Init.ReadyMasterManagement = SPI_RDY_MASTER_MANAGEMENT_INTERNALLY;
   hspi3.Init.ReadyPolarity = SPI_RDY_POLARITY_HIGH;
+
   if (HAL_SPI_Init(&hspi3) != HAL_OK)
   {
     Error_Handler();
   }
+
   /* USER CODE BEGIN SPI3_Init 2 */
-
   /* USER CODE END SPI3_Init 2 */
-
 }
 
 /**
@@ -302,35 +290,35 @@ static void MX_SPI3_Init(void)
   */
 static void MX_TIM6_Init(void)
 {
-
   /* USER CODE BEGIN TIM6_Init 0 */
-
   /* USER CODE END TIM6_Init 0 */
 
   TIM_MasterConfigTypeDef sMasterConfig = {0};
 
   /* USER CODE BEGIN TIM6_Init 1 */
-
   /* USER CODE END TIM6_Init 1 */
+
   htim6.Instance = TIM6;
   htim6.Init.Prescaler = 50000-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 499;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();
   }
+
   sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
   sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+
   if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
   {
     Error_Handler();
   }
+
   /* USER CODE BEGIN TIM6_Init 2 */
-
   /* USER CODE END TIM6_Init 2 */
-
 }
 
 /**
@@ -341,8 +329,8 @@ static void MX_TIM6_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
-  /* USER CODE BEGIN MX_GPIO_Init_1 */
 
+  /* USER CODE BEGIN MX_GPIO_Init_1 */
   /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
@@ -423,22 +411,39 @@ static void MX_GPIO_Init(void)
   HAL_NVIC_EnableIRQ(EXTI13_IRQn);
 
   /* USER CODE BEGIN MX_GPIO_Init_2 */
-
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
 
+static void app_print_frame(const char *prefix,
+                            const uint8_t *frame,
+                            uint8_t length)
+{
+    uint8_t i;
+
+    printf("%s", prefix);
+
+    for (i = 0u; i < length; i++)
+    {
+        printf("%02X", frame[i]);
+
+        if (i < (length - 1u))
+        {
+            printf(" ");
+        }
+    }
+
+    printf("\r\n");
+}
+
 static void app_init(void)
 {
-    printf("app_init: start\r\n");
-
     radio_cfg.pan_id = 0x1234u;
     radio_cfg.short_address = 0x0001u;
     radio_cfg.role = MRF24J40_ROLE_PAN_COORDINATOR;
 
     (void)mrf24j40_init();
-    printf("app_init: mrf24j40 inicializado\r\n");
 
     if (radio_cfg.role == MRF24J40_ROLE_PAN_COORDINATOR)
     {
@@ -448,13 +453,14 @@ static void app_init(void)
     {
         (void)mrf24j40_configure_nonbeacon_device();
     }
-    printf("app_init: rol mrf24j40 establecido\r\n");
 
     (void)mrf24j40_set_pan_id(radio_cfg.pan_id);
     (void)mrf24j40_set_short_address(radio_cfg.short_address);
     (void)mrf24j40_set_extended_address();
 
-    printf("app_init: inicializacion mrf24j40 completa\r\n");
+    printf("[RADIO] COORDINATOR READY - PAN: 0x%04X - ADDR: 0x%04X\r\n",
+           radio_cfg.pan_id,
+           radio_cfg.short_address);
 }
 
 static void app_task(void)
@@ -467,10 +473,28 @@ static void app_task(void)
 
     /* Si hay mensaje pendiente, lo lee y procesa */
     status = mrf24j40_read_rx_fifo(&rx_packet);
+
     if (status == MRF24J40_OK)
     {
-        printf("app_task: mensaje pendiente\r\n");
-        __NOP();    /* De momento solo se revisa mediante debug a rx_packet */
+        printf("[RADIO] RX LENGTH: %u\r\n",
+               (unsigned int)rx_packet.frame_length);
+
+        printf("[RADIO] RX: %02X %02X %02X %02X %02X %02X "
+               "%02X %02X %02X %02X %02X %02X\r\n",
+               rx_packet.frame[0],
+               rx_packet.frame[1],
+               rx_packet.frame[2],
+               rx_packet.frame[3],
+               rx_packet.frame[4],
+               rx_packet.frame[5],
+               rx_packet.frame[6],
+               rx_packet.frame[7],
+               rx_packet.frame[8],
+               rx_packet.frame[9],
+               rx_packet.frame[10],
+               rx_packet.frame[11]);
+
+        __NOP();
     }
 
     /* Verifica si se debe transmitir un paquete */
@@ -482,44 +506,47 @@ static void app_task(void)
         /* Arma el paquete a transmitir */
         app_build_test_frame();
 
+        app_print_frame("[RADIO] TX: ",
+                        tx_packet.frame,
+                        tx_packet.frame_length);
+
         /* Transmite paquete con ACK deshabilitado */
         (void)mrf24j40_write_tx_normal_fifo(&tx_packet, false);
-        printf("app_task: intenta transmitr\r\n");
     }
 
     /* Espera confirmación de transmision */
     status = mrf24j40_get_tx_complete(&tx_complete);
+
     if ((status == MRF24J40_OK) && (tx_complete == true))
     {
-        printf("app_task: paquete transmitido\r\n");
+        printf("[RADIO] TX COMPLETE\r\n");
     }
 }
 
 static void app_build_test_frame(void)
 {
-	tx_packet.frame[0] = 0x41u;
-	tx_packet.frame[1] = 0x88u;
-	tx_packet.frame[2] = 0x01u;
-	tx_packet.frame[3] = 0x34u;
-	tx_packet.frame[4] = 0x12u;
-	tx_packet.frame[5] = 0x01u;
-	tx_packet.frame[6] = 0x00u;
-	tx_packet.frame[7] = 0x02u;
-	tx_packet.frame[8] = 0x00u;
-
-	tx_packet.frame[9]  = 0x01u;
-	tx_packet.frame[10] = 0x02u;
-	tx_packet.frame[11] = 0x03u;
-
-	tx_packet.frame_length = 12;
+    tx_packet.frame[0] = 0x41u;
+    tx_packet.frame[1] = 0x88u;
+    tx_packet.frame[2] = 0x01u;
+    tx_packet.frame[3] = 0x34u;
+    tx_packet.frame[4] = 0x12u;
+    tx_packet.frame[5] = 0x01u;
+    tx_packet.frame[6] = 0x00u;
+    tx_packet.frame[7] = 0x02u;
+    tx_packet.frame[8] = 0x00u;
+    tx_packet.frame[9]  = 0x01u;
+    tx_packet.frame[10] = 0x02u;
+    tx_packet.frame[11] = 0x03u;
+    tx_packet.frame_length = 12;
 }
 
 void HAL_GPIO_EXTI_Falling_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == INT_Pin)
     {
-    	mrf24j40_set_interrupt_pending();
-    	printf("Callback: recibe interrupcion \r\n");
+        mrf24j40_set_interrupt_pending();
+
+        printf("[RADIO] IRQ\r\n");
     }
 }
 
@@ -527,17 +554,18 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == USER_BUTTON_Pin)
     {
-    	HAL_GPIO_TogglePin(GR_LED_GPIO_Port, GR_LED_Pin);
-    	tx_flag = 1u;
+        HAL_GPIO_TogglePin(GR_LED_GPIO_Port, GR_LED_Pin);
+
+        tx_flag = 1u;
     }
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	if(htim->Instance == TIM6)
-	{
-		HAL_GPIO_TogglePin(YE_LED_GPIO_Port, YE_LED_Pin);
-	}
+    if(htim->Instance == TIM6)
+    {
+        HAL_GPIO_TogglePin(YE_LED_GPIO_Port, YE_LED_Pin);
+    }
 }
 
 /* USER CODE END 4 */
@@ -551,9 +579,11 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   /* User can add his own implementation to report the HAL error return state */
   __disable_irq();
+
   while (1)
   {
   }
+
   /* USER CODE END Error_Handler_Debug */
 }
 
