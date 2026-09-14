@@ -347,7 +347,7 @@ void userTask(void *argument)
 void dinTask(void *argument)
 {
   /* USER CODE BEGIN dinTask */
-  app_din_task(argument);
+  //app_din_task(argument);
   for(;;)
   {
 	  osDelay(1);
@@ -370,7 +370,7 @@ void doutTask(void *argument)
 {
   /* USER CODE BEGIN doutTask */
   /* Infinite loop */
-  app_dout_task(argument);
+  //app_dout_task(argument);
   for(;;)
   {
 	  osDelay(1);
@@ -413,7 +413,7 @@ void rs485Task(void *argument)
 {
   /* USER CODE BEGIN rs485Task */
   /* Infinite loop */
-  //app_rs485_task(argument);
+  app_rs485_task(argument);
   for(;;)
   {
 	  osDelay(1);

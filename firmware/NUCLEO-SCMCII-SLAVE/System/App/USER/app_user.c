@@ -1,4 +1,4 @@
-/**************************************************************************************************
+/******************************************************************************
  * Copyright (c) 2026, Lucas Kirschner <kirschnerlucas1@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,7 +20,7 @@
  * SOFTWARE.
  *
  * SPDX-License-Identifier: MIT
- *************************************************************************************************/
+ ******************************************************************************/
 
 /**
  * @file    app_user.c
@@ -36,36 +36,40 @@
  * where the final user can add application-specific code without modifying the
  * base firmware layers.
  *
- * This implementation provides a minimal radio transmission test intended for
- * a node configured as an IEEE 802.15.4 device.
+ * This implementation provides simple validation tests for the main application
+ * services.
  *
- * The device periodically sends a one-byte incremental value to the PAN
- * coordinator at short address 0x0000.
+ * The available tests are:
  *
- * app_radio_send() only reports whether the message was successfully queued.
- * The definitive transmission result is obtained asynchronously by the radio
- * application task after the MRF24J40 reports TX completion.
+ * - Periodic IEEE 802.15.4 radio transmission.
+ * - Digital input/output mirror.
+ * - Single-byte RS485 echo.
  *
- * The radio application therefore reports through the debug console:
+ * Only one test is intended to be enabled at a time.
  *
- * - successful transmission
- * - number of hardware retransmissions
- * - missing acknowledgment after retry exhaustion
- * - CSMA-CA channel access failure
+ * The RS485 echo test operates entirely through the app_rs485 public API.
  *
- * ACK monitoring and retransmission are entirely handled by the MRF24J40
- * hardware.
+ * Each byte received through RS485 is retrieved from the application receive
+ * queue and immediately requested for retransmission through the application
+ * transmit queue.
+ *
+ * The app_rs485 task remains the exclusive owner of the lower RS485 driver and
+ * manages reception, half-duplex direction switching and asynchronous UART
+ * transmission.
  *
  * @ingroup app_user
  * @{
  */
 
 /* Includes ------------------------------------------------------------------*/
+
 #include "cmsis_os2.h"
+
 #include <stdint.h>
 #include <stdio.h>
 
 /* Private includes ----------------------------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 #include "app_user.h"
@@ -78,11 +82,13 @@
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
+
 /* USER CODE BEGIN PTD */
 
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
+
 /* USER CODE BEGIN PD */
 
 /**
@@ -93,31 +99,48 @@
 /**
  * @brief Enable digital input/output mirror test.
  */
-#define APP_USER_TEST_IO_MIRROR
+/* #define APP_USER_TEST_IO_MIRROR */
+
+/**
+ * @brief Enable single-byte RS485 echo test.
+ */
+#define APP_USER_TEST_RS485_ECHO
 
 /**
  * @brief Period, in milliseconds, between radio transmissions.
  */
-#define APP_USER_UPDATE_PERIOD_MS        ((uint32_t)1000u)
+#define APP_USER_UPDATE_PERIOD_MS          ((uint32_t)1000u)
 
 /**
  * @brief Period, in milliseconds, between digital I/O updates.
  */
-#define APP_USER_IO_UPDATE_PERIOD_MS     ((uint32_t)10u)
+#define APP_USER_IO_UPDATE_PERIOD_MS       ((uint32_t)10u)
+
+/**
+ * @brief Delay, in milliseconds, between RS485 receive queue checks.
+ *
+ * @details
+ * app_rs485_receive() is non-blocking. A short delay prevents the user task
+ * from continuously polling the receive queue while keeping the echo response
+ * latency low.
+ */
+#define APP_USER_RS485_UPDATE_PERIOD_MS    ((uint32_t)1u)
 
 /**
  * @brief PAN coordinator destination short address.
  */
-#define APP_USER_RADIO_DESTINATION       APP_RADIO_COORDINATOR_ADDRESS
+#define APP_USER_RADIO_DESTINATION         APP_RADIO_COORDINATOR_ADDRESS
 
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
+
 /* USER CODE BEGIN PM */
 
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+
 /* USER CODE BEGIN PV */
 
 /**
@@ -131,22 +154,30 @@ static uint8_t app_user_tx_data = 0u;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
+
 /* USER CODE BEGIN PFP */
 
 static void app_user_radio_test(void);
+
 static void app_user_io_mirror_test(void);
+
+static void app_user_rs485_echo_test(void);
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
+
 /* USER CODE BEGIN 0 */
 
 static void app_user_radio_test(void)
 {
     printf("\r\n");
+
     printf("[APP_USER] Radio device transmission test\r\n");
+
     printf("[APP_USER] Destination: 0x%04X\r\n",
            APP_USER_RADIO_DESTINATION);
+
     printf("[APP_USER] Period: %lu ms\r\n",
            (unsigned long)APP_USER_UPDATE_PERIOD_MS);
 
@@ -161,15 +192,17 @@ static void app_user_radio_test(void)
          * the complete ACK timeout and retransmission procedure in hardware.
          */
         radio_status =
-            app_radio_send(APP_USER_RADIO_DESTINATION,
-                           app_user_tx_data);
+            app_radio_send(
+                APP_USER_RADIO_DESTINATION,
+                app_user_tx_data);
 
         if (radio_status == APP_RADIO_OK)
         {
-            printf("[APP_USER] TX request dst=0x%04X data=0x%02X (%u)\r\n",
-                   APP_USER_RADIO_DESTINATION,
-                   app_user_tx_data,
-                   app_user_tx_data);
+            printf(
+                "[APP_USER] TX request dst=0x%04X data=0x%02X (%u)\r\n",
+                APP_USER_RADIO_DESTINATION,
+                app_user_tx_data,
+                app_user_tx_data);
 
             /*
              * Increment only after the message was accepted by the TX queue.
@@ -179,14 +212,16 @@ static void app_user_radio_test(void)
         }
         else if (radio_status == APP_RADIO_E_QUEUE_FULL)
         {
-            printf("[APP_USER] TX queue full data=0x%02X\r\n",
-                   app_user_tx_data);
+            printf(
+                "[APP_USER] TX queue full data=0x%02X\r\n",
+                app_user_tx_data);
         }
         else
         {
-            printf("[APP_USER] TX request error=%d data=0x%02X\r\n",
-                   (int)radio_status,
-                   app_user_tx_data);
+            printf(
+                "[APP_USER] TX request error=%d data=0x%02X\r\n",
+                (int)radio_status,
+                app_user_tx_data);
         }
 
         /*
@@ -207,7 +242,6 @@ static void app_user_radio_test(void)
          * This preserves the radio driver ownership model and prevents direct
          * access to the MRF24J40 from the user application task.
          */
-
         osDelay(APP_USER_UPDATE_PERIOD_MS);
     }
 }
@@ -215,22 +249,29 @@ static void app_user_radio_test(void)
 static void app_user_io_mirror_test(void)
 {
     printf("\r\n");
+
     printf("[APP_USER] Digital input/output mirror test\r\n");
+
     printf("[APP_USER] DIN0..DIN7 -> DOUT0..DOUT7\r\n");
+
     printf("[APP_USER] Period: %lu ms\r\n",
            (unsigned long)APP_USER_IO_UPDATE_PERIOD_MS);
 
     for (;;)
     {
         uint8_t input_image;
+
         app_din_status_t din_status;
+
         app_dout_status_t dout_status;
 
         /*
          * Read the latest digital input image using the non-blocking app_din
          * public API.
          */
-        din_status = app_din_read(&input_image);
+        din_status =
+            app_din_read(
+                &input_image);
 
         if (din_status == APP_DIN_OK)
         {
@@ -242,12 +283,15 @@ static void app_user_io_mirror_test(void)
              * ...
              * DIN7 -> DOUT7
              */
-            dout_status = app_dout_set_outputs(input_image);
+            dout_status =
+                app_dout_set_outputs(
+                    input_image);
 
             if (dout_status != APP_DOUT_OK)
             {
-                printf("[APP_USER] app_dout_set_outputs() failed: %d\r\n",
-                       (int)dout_status);
+                printf(
+                    "[APP_USER] app_dout_set_outputs() failed: %d\r\n",
+                    (int)dout_status);
             }
         }
         else if (din_status == APP_DIN_E_NOT_READY)
@@ -264,8 +308,9 @@ static void app_user_io_mirror_test(void)
         }
         else if (din_status != APP_DIN_E_NULL)
         {
-            printf("[APP_USER] app_din_read() failed: %d\r\n",
-                   (int)din_status);
+            printf(
+                "[APP_USER] app_din_read() failed: %d\r\n",
+                (int)din_status);
         }
         else
         {
@@ -278,6 +323,163 @@ static void app_user_io_mirror_test(void)
     }
 }
 
+/**
+ * @brief Run the single-byte RS485 echo test.
+ *
+ * @details
+ * This test reproduces at application level the behavior of the original
+ * standalone RS485 validation program.
+ *
+ * The RS485 application service continuously receives bytes in the background
+ * and places them into its input queue.
+ *
+ * This function retrieves each available byte and requests transmission of the
+ * same value through app_rs485_send().
+ *
+ * The resulting communication sequence is:
+ *
+ * @code
+ * RS485 RX
+ *    |
+ *    v
+ * app_rs485_task()
+ *    |
+ *    v
+ * RS485 input queue
+ *    |
+ *    v
+ * app_rs485_receive()
+ *    |
+ *    v
+ * app_rs485_send()
+ *    |
+ *    v
+ * RS485 output queue
+ *    |
+ *    v
+ * app_rs485_task()
+ *    |
+ *    v
+ * RS485 TX
+ * @endcode
+ *
+ * No direct access to the RS485 driver or UART peripheral is performed from
+ * this task.
+ */
+static void app_user_rs485_echo_test(void)
+{
+    printf("\r\n");
+
+    printf("[APP_USER] RS485 single-byte echo test\r\n");
+
+    printf("[APP_USER] RX byte -> TX same byte\r\n");
+
+    printf("[APP_USER] Poll period: %lu ms\r\n",
+           (unsigned long)APP_USER_RS485_UPDATE_PERIOD_MS);
+
+    for (;;)
+    {
+        uint8_t rx_data = 0u;
+
+        app_rs485_status_t rx_status;
+
+        /*
+         * Retrieve one byte from the RS485 application receive queue.
+         *
+         * The operation is non-blocking. APP_RS485_E_QUEUE_EMPTY is expected
+         * while no new byte is available.
+         */
+        rx_status =
+            app_rs485_receive(
+                &rx_data);
+
+        if (rx_status == APP_RS485_OK)
+        {
+            app_rs485_status_t tx_status;
+
+            printf(
+                "[APP_USER] RS485 RX: 0x%02X '%c'\r\n",
+                rx_data,
+                ((rx_data >= 0x20u) &&
+                 (rx_data <= 0x7Eu)) ?
+                    (char)rx_data :
+                    '.');
+
+            /*
+             * Echo the received byte through the asynchronous RS485
+             * application service.
+             *
+             * APP_RS485_OK indicates that the byte was accepted by the
+             * transmission queue. The physical UART transmission is performed
+             * asynchronously by app_rs485_task().
+             */
+            tx_status =
+                app_rs485_send(
+                    rx_data);
+
+            if (tx_status == APP_RS485_OK)
+            {
+                printf(
+                    "[APP_USER] RS485 echo TX request: 0x%02X '%c'\r\n",
+                    rx_data,
+                    ((rx_data >= 0x20u) &&
+                     (rx_data <= 0x7Eu)) ?
+                        (char)rx_data :
+                        '.');
+            }
+            else if (tx_status == APP_RS485_E_QUEUE_FULL)
+            {
+                printf(
+                    "[APP_USER] RS485 TX queue full: 0x%02X\r\n",
+                    rx_data);
+            }
+            else if (tx_status == APP_RS485_E_STATE)
+            {
+                printf(
+                    "[APP_USER] app_rs485_send() not ready\r\n");
+            }
+            else
+            {
+                printf(
+                    "[APP_USER] app_rs485_send() failed: %d\r\n",
+                    (int)tx_status);
+            }
+        }
+        else if (rx_status == APP_RS485_E_QUEUE_EMPTY)
+        {
+            /*
+             * No received byte is currently available.
+             *
+             * This is the normal idle condition and is intentionally not
+             * reported through the debug console.
+             */
+        }
+        else if (rx_status == APP_RS485_E_STATE)
+        {
+            /*
+             * The RS485 service may still be completing its initialization.
+             *
+             * Keep waiting without treating this transient condition as an
+             * application error.
+             */
+        }
+        else if (rx_status != APP_RS485_E_NULL)
+        {
+            printf(
+                "[APP_USER] app_rs485_receive() failed: %d\r\n",
+                (int)rx_status);
+        }
+        else
+        {
+            /*
+             * Null pointer is not expected here.
+             */
+        }
+
+        osDelay(APP_USER_RS485_UPDATE_PERIOD_MS);
+    }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -286,19 +488,20 @@ static void app_user_io_mirror_test(void)
  * @param argument Task argument. Not used.
  *
  * @details
- * This task implements a minimal periodic radio transmission test.
+ * This task provides the application-level validation tests.
  *
- * Code inside USER CODE BEGIN app_init is executed once before the periodic
- * loop starts.
+ * Only one APP_USER_TEST_* option is intended to be enabled at a time.
  *
- * Code inside USER CODE BEGIN app_task sends one incremental byte to the PAN
- * coordinator every APP_USER_UPDATE_PERIOD_MS milliseconds.
+ * The radio test periodically queues one incremental byte for transmission to
+ * the PAN coordinator.
  *
- * app_radio_send() is asynchronous. APP_RADIO_OK indicates only that the
- * message entered the radio TX queue successfully.
+ * The digital I/O mirror test copies DIN0..DIN7 directly to DOUT0..DOUT7.
  *
- * The definitive transmission result, including acknowledgment and hardware
- * retry information, is reported asynchronously by app_radio_task().
+ * The RS485 echo test retrieves each byte received by app_rs485_task() and
+ * requests asynchronous retransmission of the same byte through app_rs485_send().
+ *
+ * The communication and peripheral service tasks retain ownership of their
+ * corresponding low-level drivers.
  */
 void app_user_task(void * argument)
 {
@@ -319,6 +522,10 @@ void app_user_task(void * argument)
 #elif defined(APP_USER_TEST_IO_MIRROR)
 
         app_user_io_mirror_test();
+
+#elif defined(APP_USER_TEST_RS485_ECHO)
+
+        app_user_rs485_echo_test();
 
 #endif
 
