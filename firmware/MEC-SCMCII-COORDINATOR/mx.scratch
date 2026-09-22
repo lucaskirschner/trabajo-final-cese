@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ScratchFile FileVersion="3.0">
+  <FileVersion>3.0</FileVersion>
+  <Workspace>
+    <WorkspaceType>Single-project</WorkspaceType>
+    <WorkspacePath>D:\CESE\Trabajo Final CESE\firmware\MEC-SCMCII-COORDINATOR\</WorkspacePath>
+    <underRoot>true</underRoot>
+    <TrustZone>0</TrustZone>
+    <HAL_Driver>C:\Users\Noxie\STM32Cube\Repository\STM32Cube_FW_H5_V1.5.0</HAL_Driver>
+    <CMSIS>Drivers/CMSIS</CMSIS>
+    <Toolchain>STM32CubeIDE</Toolchain>
+    <IocFile>MEC-SCMCII-COORDINATOR.ioc</IocFile>
+    <Project>
+      <ProjectName>MEC-SCMCII-COORDINATOR</ProjectName>
+      <ProjectNature>C</ProjectNature>
+      <Secure />
+      <filestoremove />
+      <sourceEntriesToRemove>
+        <sourceEntry />
+      </sourceEntriesToRemove>
+      <configs>
+        <config>
+          <name>MEC-SCMCII-COORDINATOR</name>
+          <mainSourceRepo>Core</mainSourceRepo>
+          <sourceStructure>Advanced</sourceStructure>
+          <device>STM32H563RITx</device>
+          <cpucore>ARM Cortex-M33</cpucore>
+          <fpu>SP</fpu>
+          <memories>
+            <memory access="xrw" name="RAM" size="655360" start="0x20000000" />
+            <memory access="rx" name="FLASH" size="2097152" start="0x08000000" />
+          </memories>
+          <startup>C:\Users\Noxie\STM32Cube\Repository\STM32Cube_FW_H5_V1.5.0\Drivers\CMSIS\Device\ST\STM32H5xx\Source\Templates\gcc\startup_stm32h563xx.s</startup>
+          <LinkSettings>
+            <LinkAdditionalLibs />
+          </LinkSettings>
+          <heapSize>0x200</heapSize>
+          <stackSize>0x400</stackSize>
+          <cpuclock>50</cpuclock>
+          <board>custom</board>
+          <debugprobe>swd</debugprobe>
+          <optimization />
+          <Aincludes>
+            <include>Core\Inc</include>
+            <include>Drivers\STM32H5xx_HAL_Driver\Inc</include>
+            <include>Drivers\STM32H5xx_HAL_Driver\Inc\Legacy</include>
+            <include>Drivers\CMSIS\Device\ST\STM32H5xx\Include</include>
+            <include>Drivers\CMSIS\Include</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\include\</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM33_NTZ\non_secure\</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2\</include>
+            <include>Middlewares\Third_Party\CMSIS\RTOS2\Include\</include>
+          </Aincludes>
+          <Adefines />
+          <Cdefines>
+            <define>USE_HAL_DRIVER</define>
+            <define>STM32H563xx</define>
+          </Cdefines>
+          <Ldefines />
+          <Cincludes>
+            <include>Core\Inc</include>
+            <include>Drivers\STM32H5xx_HAL_Driver\Inc</include>
+            <include>Drivers\STM32H5xx_HAL_Driver\Inc\Legacy</include>
+            <include>Drivers\CMSIS\Device\ST\STM32H5xx\Include</include>
+            <include>Drivers\CMSIS\Include</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\include\</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\portable\GCC\ARM_CM33_NTZ\non_secure\</include>
+            <include>Middlewares\Third_Party\FreeRTOS\Source\CMSIS_RTOS_V2\</include>
+            <include>Middlewares\Third_Party\CMSIS\RTOS2\Include\</include>
+          </Cincludes>
+          <definestoremove>
+            <Adefines />
+            <Cdefines>
+              <define>USE_FULL_LL_DRIVER</define>
+              <define>USE_FULL_ASSERT=1U</define>
+            </Cdefines>
+            <Ldefines />
+          </definestoremove>
+          <inctoremove>
+            <Aincludes>
+              <include />
+            </Aincludes>
+            <Cincludes />
+          </inctoremove>
+        </config>
+      </configs>
+      <copyAsReference>false</copyAsReference>
+      <sourceEntries>
+        <sourceEntry>
+          <name>Core</name>
+        </sourceEntry>
+        <sourceEntry>
+          <name>Drivers</name>
+        </sourceEntry>
+        <sourceEntry>
+          <name>Middlewares</name>
+        </sourceEntry>
+      </sourceEntries>
+      <Groups />
+    </Project>
+  </Workspace>
+</ScratchFile>
+

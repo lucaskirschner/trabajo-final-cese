@@ -106,7 +106,7 @@
  * - APP_RADIO_ROLE_PAN_COORDINATOR.
  * - APP_RADIO_ROLE_DEVICE.
  */
-#define APP_RADIO_NODE_ROLE                   APP_RADIO_ROLE_PAN_COORDINATOR
+#define APP_RADIO_NODE_ROLE                   APP_RADIO_ROLE_DEVICE
 
 /**
  * @brief Local IEEE 802.15.4 short address.
@@ -120,7 +120,7 @@
  * This value must be changed together with APP_RADIO_NODE_ROLE when building
  * the firmware for a different node.
  */
-#define APP_RADIO_SHORT_ADDRESS               ((uint16_t)0x0000u)
+#define APP_RADIO_SHORT_ADDRESS               ((uint16_t)0x0001u)
 
 /**
  * @brief PAN coordinator fixed short address.

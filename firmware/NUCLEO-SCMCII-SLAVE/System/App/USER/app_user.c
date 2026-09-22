@@ -94,7 +94,7 @@
 /**
  * @brief Enable radio communication test.
  */
-/* #define APP_USER_TEST_RADIO */
+#define APP_USER_TEST_RADIO
 
 /**
  * @brief Enable digital input/output mirror test.
@@ -104,7 +104,7 @@
 /**
  * @brief Enable single-byte RS485 echo test.
  */
-#define APP_USER_TEST_RS485_ECHO
+/* #define APP_USER_TEST_RS485_ECHO */
 
 /**
  * @brief Period, in milliseconds, between radio transmissions.
