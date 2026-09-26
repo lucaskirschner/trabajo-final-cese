@@ -135,3 +135,17 @@
 
 # TeXstudio temporary files
 *.txss
+
+# ==============================
+# DRAW.IO
+# ==============================
+
+# Draw.io backup files
+*.drawio.bkp
+
+# ==============================
+# CEEDLING / UNIT TESTS
+# ==============================
+
+# Ceedling generated build artifacts
+**/build/ceedling/

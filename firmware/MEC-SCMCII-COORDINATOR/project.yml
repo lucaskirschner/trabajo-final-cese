@@ -1,0 +1,76 @@
+# =============================================================================
+# Copyright (c) 2026, Lucas Kirschner <kirschnerlucas1@gmail.com>
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# SPDX-License-Identifier: MIT
+# =============================================================================
+
+# =============================================================================
+# @file    project.yml
+# @author  Lucas Kirschner <kirschnerlucas1@gmail.com>
+# @date    2026-09-25
+# @brief   Ceedling unit-test configuration for MEC-SCMCII-COORDINATOR.
+#
+# @details
+# This file configures the host-based unit-test environment used to validate
+# the main firmware drivers with Ceedling, Unity, and CMock.
+#
+# Production source files are compiled directly from the firmware tree without
+# duplicating them inside the test environment. Hardware-dependent port-layer
+# functions are replaced by mocks during unit testing.
+#
+# The configured driver modules are:
+#  - SCLT38BT8 digital input driver
+#  - VNI8200XP32 digital output driver
+#  - RS485 communication driver
+#  - MRF24J40 wireless communication driver
+#
+# Test build artifacts are kept separate from the STM32CubeIDE build output.
+# =============================================================================
+
+---
+:project:
+  :which_ceedling: gem
+  :ceedling_version: 1.1.9
+  :build_root: build/ceedling
+  :test_file_prefix: test_
+  :default_tasks:
+    - test:all
+
+:paths:
+  :test:
+    - +:Test/**
+
+  :source:
+    - System/Drivers/SCLT38BT8/**
+    - System/Drivers/VNI8200XP32/**
+    - System/Drivers/RS485/**
+    - System/Drivers/MRF24J40/**
+
+  :include:
+    - System/Drivers/SCLT38BT8
+    - System/Drivers/VNI8200XP32
+    - System/Drivers/RS485
+    - System/Drivers/MRF24J40
+    - System/BSP/IO
+
+:defines:
+  :test:
+    - TEST
