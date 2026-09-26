@@ -74,3 +74,8 @@
 :defines:
   :test:
     - TEST
+
+:cmock:
+  :plugins:
+    - :ignore
+    - :callback
