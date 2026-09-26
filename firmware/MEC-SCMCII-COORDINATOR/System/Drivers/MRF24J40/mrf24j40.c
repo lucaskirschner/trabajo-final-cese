@@ -45,10 +45,18 @@
 
 /* ============================= Includes ================================== */
 
+#include <stddef.h>
+
 #include "mrf24j40.h"
 #include "mrf24j40_port.h"
 #include "mrf24j40_reg.h"
+
+#ifndef TEST
 #include "stm32h5xx_hal.h"
+#else
+#define __disable_irq()    ((void)0)
+#define __enable_irq()     ((void)0)
+#endif
 
 /* ============================ Local Macros =============================== */
 

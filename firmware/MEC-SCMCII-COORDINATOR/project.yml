@@ -71,6 +71,7 @@
     - System/Drivers/MRF24J40
     - System/BSP/IO
     - System/BSP/RS485
+    - System/BSP/RADIO
 
 :defines:
   :test:
