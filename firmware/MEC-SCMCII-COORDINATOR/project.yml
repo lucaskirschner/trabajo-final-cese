@@ -70,6 +70,7 @@
     - System/Drivers/RS485
     - System/Drivers/MRF24J40
     - System/BSP/IO
+    - System/BSP/RS485
 
 :defines:
   :test:
@@ -79,3 +80,8 @@
   :plugins:
     - :ignore
     - :callback
+
+  :strippables:
+    - 'void\s+rs485_port_tx_complete_callback\s*\(\s*void\s*\)\s*;'
+    - 'void\s+rs485_port_rx_complete_callback\s*\(\s*void\s*\)\s*;'
+    - 'void\s+rs485_port_error_callback\s*\(\s*uint32_t\s+error_code\s*\)\s*;'
