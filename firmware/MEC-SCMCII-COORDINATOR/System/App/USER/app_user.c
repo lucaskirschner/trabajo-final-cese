@@ -94,12 +94,12 @@
 /**
  * @brief Enable radio communication test.
  */
-#define APP_USER_TEST_RADIO
+/* #define APP_USER_TEST_RADIO */
 
 /**
  * @brief Enable digital input/output mirror test.
  */
-/* #define APP_USER_TEST_IO_MIRROR */
+#define APP_USER_TEST_IO_MIRROR
 
 /**
  * @brief Enable single-byte RS485 echo test.

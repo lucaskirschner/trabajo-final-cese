@@ -183,3 +183,13 @@ La figura \ref{fig:ensayo_radio} muestra los registros obtenidos durante el ensa
 	\caption[Ensayo de la interfaz inalámbrica]{Registros obtenidos durante el ensayo de comunicación punto a punto mediante IEEE 802.15.4.}
 	\label{fig:ensayo_radio}
 \end{figure}
+
+\subsubsection{Tiempo de procesamiento de las salidas digitales}
+
+El tiempo de procesamiento de las salidas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la llamada al controlador encargado de actualizar el VNI8200XP-32, excluyendo el tiempo de espera en la cola de mensajes y la latencia asociada a la planificación de tareas.
+
+Para el ensayo se generaron 1000 solicitudes consecutivas de actualización desde la tarea de aplicación, alternando los patrones \texttt{0x00} y \texttt{0xFF}. La frecuencia del núcleo durante la prueba fue de 50 MHz.
+
+De las 1000 operaciones procesadas, 999 finalizaron correctamente y una devolvió un estado de error. Dado que el objetivo del ensayo fue caracterizar el tiempo de ejecución de las operaciones válidas y que esta condición no afectó la continuidad de la prueba, los resultados temporales se calcularon sobre las 999 operaciones satisfactorias.
+
+Se obtuvo un tiempo mínimo de 68,84~$\mu$s, un tiempo medio de aproximadamente 82,2~$\mu$s y un máximo observado de 326,36~$\mu$s. La repetición del ensayo presentó valores medios prácticamente equivalentes, lo que indica un comportamiento temporal estable para la operación evaluada. La diferencia entre el tiempo medio y el máximo observado puede atribuirse a la ejecución concurrente del sistema bajo FreeRTOS, dado que la medición incluye las posibles interrupciones o preempciones ocurridas durante la operación.

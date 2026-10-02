@@ -77,8 +77,8 @@ extern osMutexId_t ioPortSpiMutexHandle;
 
 /* ======================= Local Static Variables ========================== */
 
-extern SPI_HandleTypeDef hspi1;
-static SPI_HandleTypeDef * const hspi = &hspi1;
+extern SPI_HandleTypeDef hspi2;
+static SPI_HandleTypeDef * const hspi = &hspi2;
 
 /* ========================== Private Prototypes =========================== */
 

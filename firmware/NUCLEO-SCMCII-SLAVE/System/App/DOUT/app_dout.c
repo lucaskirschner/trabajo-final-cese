@@ -57,10 +57,41 @@
 #include "cmsis_os2.h"
 
 #include <stdint.h>
+#include "swo.h"
+
+#include "dwt.h"
+
+/* ============================= Defines =================================== */
+
+/**
+ * @brief Enable digital-output execution-time measurement.
+ *
+ * @details
+ * When enabled, the execution time of the first APP_DOUT_TEST_SAMPLES
+ * calls to vni8200xp32_write_outputs() is measured using the DWT cycle
+ * counter.
+ */
+#define APP_DOUT_TEST_TIMING
+
+/**
+ * @brief Number of digital-output operations measured during the test.
+ */
+#define APP_DOUT_TEST_SAMPLES    ((uint32_t)1000u)
 
 /* ========================== Private Prototypes =========================== */
 
 static uint32_t app_dout_status_to_fault(vni8200xp32_status_t status);
+
+#if defined(APP_DOUT_TEST_TIMING)
+
+static void app_dout_print_timing_results(uint32_t sample_count,
+                                          uint32_t valid_count,
+                                          uint32_t error_count,
+                                          uint32_t min_cycles,
+                                          uint32_t average_cycles,
+                                          uint32_t max_cycles);
+
+#endif
 
 /* ======================= External RTOS Objects ============================ */
 
@@ -76,9 +107,36 @@ void app_dout_task(void * argument)
     vni8200xp32_status_t vni_status;
     uint32_t fault_flags;
 
+#if defined(APP_DOUT_TEST_TIMING)
+
+    uint32_t start_cycles;
+    uint32_t end_cycles;
+    uint32_t elapsed_cycles;
+
+    uint32_t sample_count = 0u;
+    uint32_t valid_count = 0u;
+    uint32_t error_count = 0u;
+
+    uint32_t min_cycles = UINT32_MAX;
+    uint32_t max_cycles = 0u;
+    uint32_t average_cycles = 0u;
+
+    uint64_t total_cycles = 0u;
+
+#endif
+
     (void)argument;
 
     HAL_GPIO_WritePin(OUT_EN_GPIO_Port, OUT_EN_Pin, GPIO_PIN_SET);
+
+#if defined(APP_DOUT_TEST_TIMING)
+
+    /*
+     * Initialize and enable the Cortex-M DWT cycle counter.
+     */
+    cycle_counter_init();
+
+#endif
 
     for (;;)
     {
@@ -89,7 +147,99 @@ void app_dout_task(void * argument)
 
         if (queue_status == osOK)
         {
+
+#if defined(APP_DOUT_TEST_TIMING)
+
+            /*
+             * Measure only the effective output-processing operation.
+             *
+             * Queue waiting time and RTOS scheduling latency are intentionally
+             * excluded from the measurement.
+             */
+            start_cycles = cycle_counter_get();
+
+#endif
+
             vni_status = vni8200xp32_write_outputs(output_image);
+
+#if defined(APP_DOUT_TEST_TIMING)
+
+            end_cycles = cycle_counter_get();
+
+            /*
+             * Acquire only the configured number of timing samples.
+             */
+            if (sample_count < APP_DOUT_TEST_SAMPLES)
+            {
+                /*
+                 * Unsigned subtraction correctly handles one possible DWT
+                 * counter wraparound.
+                 */
+                elapsed_cycles = end_cycles - start_cycles;
+
+                if (vni_status == VNI8200XP32_OK)
+                {
+                    total_cycles += (uint64_t)elapsed_cycles;
+
+                    if (elapsed_cycles < min_cycles)
+                    {
+                        min_cycles = elapsed_cycles;
+                    }
+
+                    if (elapsed_cycles > max_cycles)
+                    {
+                        max_cycles = elapsed_cycles;
+                    }
+
+                    valid_count++;
+                }
+                else
+                {
+                    error_count++;
+                }
+
+                sample_count++;
+
+                /*
+                 * Print the results once all requested samples have been
+                 * processed.
+                 */
+                if (sample_count == APP_DOUT_TEST_SAMPLES)
+                {
+                    if (valid_count > 0u)
+                    {
+                        average_cycles =
+                            (uint32_t)(total_cycles /
+                                       (uint64_t)valid_count);
+
+                        app_dout_print_timing_results(sample_count,
+                                                      valid_count,
+                                                      error_count,
+                                                      min_cycles,
+                                                      average_cycles,
+                                                      max_cycles);
+                    }
+                    else
+                    {
+                        printf("\r\n");
+                        printf("[APP_DOUT] Timing test\r\n");
+
+                        printf("[APP_DOUT] Samples : %lu\r\n",
+                               (unsigned long)sample_count);
+
+                        printf("[APP_DOUT] Valid   : 0\r\n");
+
+                        printf("[APP_DOUT] Errors  : %lu\r\n",
+                               (unsigned long)error_count);
+
+                        printf("[APP_DOUT] No valid timing samples\r\n");
+                        printf("[APP_DOUT] Timing test completed\r\n");
+                        printf("\r\n");
+                    }
+                }
+            }
+
+#endif
 
             if (vni_status != VNI8200XP32_OK)
             {
@@ -197,5 +347,58 @@ static uint32_t app_dout_status_to_fault(vni8200xp32_status_t status)
 
     return fault;
 }
+
+#if defined(APP_DOUT_TEST_TIMING)
+
+/**
+ * @brief Print the digital-output timing-test results.
+ *
+ * @param sample_count   Total number of processed samples.
+ * @param valid_count    Number of successful output updates.
+ * @param error_count    Number of output updates that returned an error.
+ * @param min_cycles     Minimum execution time in CPU cycles.
+ * @param average_cycles Average execution time in CPU cycles.
+ * @param max_cycles     Maximum execution time in CPU cycles.
+ *
+ * @details
+ * Cycle counts are converted to microseconds using SystemCoreClock.
+ * Integer arithmetic is intentionally used to avoid floating-point formatting
+ * in the debug output.
+ */
+static void app_dout_print_timing_results(uint32_t sample_count,
+                                          uint32_t valid_count,
+                                          uint32_t error_count,
+                                          uint32_t min_cycles,
+                                          uint32_t average_cycles,
+                                          uint32_t max_cycles)
+{
+    printf("\r\n");
+    printf("[APP_DOUT] Timing test\r\n");
+
+    printf("[APP_DOUT] Samples : %lu\r\n",
+           (unsigned long)sample_count);
+
+    printf("[APP_DOUT] Valid   : %lu\r\n",
+           (unsigned long)valid_count);
+
+    printf("[APP_DOUT] Errors  : %lu\r\n",
+           (unsigned long)error_count);
+
+    printf("[APP_DOUT] CPU     : %lu Hz\r\n",
+           (unsigned long)SystemCoreClock);
+
+    printf("[APP_DOUT] Min cycles : %lu\r\n",
+           (unsigned long)min_cycles);
+
+    printf("[APP_DOUT] Avg cycles : %lu\r\n",
+           (unsigned long)average_cycles);
+
+    printf("[APP_DOUT] Max cycles : %lu\r\n",
+           (unsigned long)max_cycles);
+
+    printf("[APP_DOUT] Timing test completed\r\n");
+}
+
+#endif
 
 /** @} */
