@@ -52,15 +52,43 @@
 #include "app_din.h"
 #include "sclt38bt8.h"
 
+#include "main.h"
+
 #include "cmsis_os2.h"
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+
+#include "dwt.h"
+
+/* ============================= Defines =================================== */
+
+/**
+ * @brief Enable digital-input execution-time measurement.
+ */
+#define APP_DIN_TEST_TIMING
+
+/**
+ * @brief Number of digital-input operations measured during the test.
+ */
+#define APP_DIN_TEST_SAMPLES    ((uint32_t)1000u)
 
 /* ========================== Private Prototypes =========================== */
 
 static void app_din_update_last_image(uint8_t input_image);
 static uint32_t app_din_status_to_fault(sclt38bt8_status_t status);
+
+#if defined(APP_DIN_TEST_TIMING)
+
+static void app_din_print_timing_results(uint32_t sample_count,
+                                         uint32_t valid_count,
+                                         uint32_t error_count,
+                                         uint32_t min_cycles,
+                                         uint32_t average_cycles,
+                                         uint32_t max_cycles);
+
+#endif
 
 /* ======================= External RTOS Objects ============================ */
 
@@ -80,11 +108,127 @@ void app_din_task(void * argument)
     uint32_t fault_flags;
     sclt38bt8_status_t din_status;
 
+#if defined(APP_DIN_TEST_TIMING)
+
+    uint32_t start_cycles;
+    uint32_t end_cycles;
+    uint32_t elapsed_cycles;
+
+    uint32_t sample_count = 0u;
+    uint32_t valid_count = 0u;
+    uint32_t error_count = 0u;
+
+    uint32_t min_cycles = UINT32_MAX;
+    uint32_t max_cycles = 0u;
+    uint32_t average_cycles = 0u;
+
+    uint64_t total_cycles = 0u;
+
+#endif
+
     (void)argument;
+
+#if defined(APP_DIN_TEST_TIMING)
+
+    cycle_counter_init();
+
+#endif
 
     for (;;)
     {
+
+#if defined(APP_DIN_TEST_TIMING)
+
+        /*
+         * Measure only the effective digital-input acquisition operation.
+         *
+         * Mutex handling, data publication and task delay are intentionally
+         * excluded from the measurement.
+         */
+        start_cycles = cycle_counter_get();
+
+#endif
+
         din_status = sclt38bt8_read_inputs(&input_image);
+
+#if defined(APP_DIN_TEST_TIMING)
+
+        end_cycles = cycle_counter_get();
+
+        /*
+         * Acquire only the configured number of timing samples.
+         */
+        if (sample_count < APP_DIN_TEST_SAMPLES)
+        {
+            /*
+             * Unsigned subtraction correctly handles one possible DWT
+             * counter wraparound.
+             */
+            elapsed_cycles = end_cycles - start_cycles;
+
+            if (din_status == SCLT38BT8_OK)
+            {
+                total_cycles += (uint64_t)elapsed_cycles;
+
+                if (elapsed_cycles < min_cycles)
+                {
+                    min_cycles = elapsed_cycles;
+                }
+
+                if (elapsed_cycles > max_cycles)
+                {
+                    max_cycles = elapsed_cycles;
+                }
+
+                valid_count++;
+            }
+            else
+            {
+                error_count++;
+            }
+
+            sample_count++;
+
+            /*
+             * Print the results once all requested samples have been
+             * processed.
+             */
+            if (sample_count == APP_DIN_TEST_SAMPLES)
+            {
+                if (valid_count > 0u)
+                {
+                    average_cycles =
+                        (uint32_t)(total_cycles /
+                                   (uint64_t)valid_count);
+
+                    app_din_print_timing_results(sample_count,
+                                                 valid_count,
+                                                 error_count,
+                                                 min_cycles,
+                                                 average_cycles,
+                                                 max_cycles);
+                }
+                else
+                {
+                    printf("\r\n");
+                    printf("[APP_DIN] Timing test\r\n");
+
+                    printf("[APP_DIN] Samples : %lu\r\n",
+                           (unsigned long)sample_count);
+
+                    printf("[APP_DIN] Valid   : 0\r\n");
+
+                    printf("[APP_DIN] Errors  : %lu\r\n",
+                           (unsigned long)error_count);
+
+                    printf("[APP_DIN] No valid timing samples\r\n");
+                    printf("[APP_DIN] Timing test completed\r\n");
+                    printf("\r\n");
+                }
+            }
+        }
+
+#endif
 
         if (din_status == SCLT38BT8_OK)
         {
@@ -234,5 +378,54 @@ static uint32_t app_din_status_to_fault(sclt38bt8_status_t status)
 
     return fault;
 }
+
+#if defined(APP_DIN_TEST_TIMING)
+
+/**
+ * @brief Print the digital-input timing-test results.
+ *
+ * @param sample_count   Total number of processed samples.
+ * @param valid_count    Number of successful input acquisitions.
+ * @param error_count    Number of input acquisitions that returned an error.
+ * @param min_cycles     Minimum execution time in CPU cycles.
+ * @param average_cycles Average execution time in CPU cycles.
+ * @param max_cycles     Maximum execution time in CPU cycles.
+ */
+static void app_din_print_timing_results(uint32_t sample_count,
+                                         uint32_t valid_count,
+                                         uint32_t error_count,
+                                         uint32_t min_cycles,
+                                         uint32_t average_cycles,
+                                         uint32_t max_cycles)
+{
+    printf("\r\n");
+    printf("[APP_DIN] Timing test\r\n");
+
+    printf("[APP_DIN] Samples : %lu\r\n",
+           (unsigned long)sample_count);
+
+    printf("[APP_DIN] Valid   : %lu\r\n",
+           (unsigned long)valid_count);
+
+    printf("[APP_DIN] Errors  : %lu\r\n",
+           (unsigned long)error_count);
+
+    printf("[APP_DIN] CPU     : %lu Hz\r\n",
+           (unsigned long)SystemCoreClock);
+
+    printf("[APP_DIN] Min cycles : %lu\r\n",
+           (unsigned long)min_cycles);
+
+    printf("[APP_DIN] Avg cycles : %lu\r\n",
+           (unsigned long)average_cycles);
+
+    printf("[APP_DIN] Max cycles : %lu\r\n",
+           (unsigned long)max_cycles);
+
+    printf("[APP_DIN] Timing test completed\r\n");
+    printf("\r\n");
+}
+
+#endif
 
 /** @} */

@@ -193,3 +193,11 @@ Para el ensayo se generaron 1000 solicitudes consecutivas de actualización desd
 De las 1000 operaciones procesadas, 999 finalizaron correctamente y una devolvió un estado de error. Dado que el objetivo del ensayo fue caracterizar el tiempo de ejecución de las operaciones válidas y que esta condición no afectó la continuidad de la prueba, los resultados temporales se calcularon sobre las 999 operaciones satisfactorias.
 
 Se obtuvo un tiempo mínimo de 68,84~$\mu$s, un tiempo medio de aproximadamente 82,2~$\mu$s y un máximo observado de 326,36~$\mu$s. La repetición del ensayo presentó valores medios prácticamente equivalentes, lo que indica un comportamiento temporal estable para la operación evaluada. La diferencia entre el tiempo medio y el máximo observado puede atribuirse a la ejecución concurrente del sistema bajo FreeRTOS, dado que la medición incluye las posibles interrupciones o preempciones ocurridas durante la operación.
+
+\subsubsection{Tiempo de adquisición de las entradas digitales}
+
+El tiempo de adquisición de las entradas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la llamada al controlador encargado de efectuar la lectura del SCLT3-8BT8, excluyendo la actualización posterior de la imagen de entradas, el acceso al mutex y el período de espera de la tarea.
+
+Se registraron 1000 adquisiciones consecutivas con una frecuencia de núcleo de 50 MHz. Todas las operaciones finalizaron correctamente, sin registrarse errores durante el ensayo.
+
+El tiempo mínimo observado fue de 59,78~$\mu$s, el tiempo medio de 60,22~$\mu$s y el máximo de 69,38~$\mu$s. La reducida diferencia entre los valores mínimo, medio y máximo evidencia un comportamiento temporal estable durante la adquisición de las entradas digitales.
