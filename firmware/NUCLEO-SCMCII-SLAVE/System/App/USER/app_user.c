@@ -94,7 +94,7 @@
 /**
  * @brief Enable radio communication test.
  */
-/* #define APP_USER_TEST_RADIO */
+#define APP_USER_TEST_RADIO
 
 /**
  * @brief Enable digital input/output mirror test.

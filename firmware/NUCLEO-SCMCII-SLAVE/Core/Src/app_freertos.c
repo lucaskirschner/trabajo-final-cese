@@ -303,7 +303,7 @@ void MX_FREERTOS_Init(void) {
 void radioTask(void *argument)
 {
   /* USER CODE BEGIN radioTask */
-  //app_radio_task(argument);
+  app_radio_task(argument);
   for(;;)
   {
 	  osDelay(10);
@@ -347,7 +347,7 @@ void userTask(void *argument)
 void dinTask(void *argument)
 {
   /* USER CODE BEGIN dinTask */
-  app_din_task(argument);
+  //app_din_task(argument);
   for(;;)
   {
 	  osDelay(10);
@@ -370,7 +370,7 @@ void doutTask(void *argument)
 {
   /* USER CODE BEGIN doutTask */
   /* Infinite loop */
-  app_dout_task(argument);
+  //app_dout_task(argument);
   for(;;)
   {
 	  osDelay(10);
