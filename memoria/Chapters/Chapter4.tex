@@ -184,6 +184,27 @@ La figura \ref{fig:ensayo_radio} muestra los registros obtenidos durante el ensa
 	\label{fig:ensayo_radio}
 \end{figure}
 
+
+%----------------------------------------------------------------------------------------
+\section{Ensayos de firmware}
+
+En esta sección se presentan los ensayos realizados para verificar el funcionamiento de los controladores de firmware y caracterizar los tiempos de ejecución de las operaciones relevantes del sistema. Las pruebas comprenden la validación unitaria de los controladores y la evaluación temporal de las operaciones de adquisición, actuación y comunicación inalámbrica.
+
+%----------------------------------------------------------------------------------------
+\subsection{Pruebas unitarias}
+
+% PENDIENTE:
+% Incorporar la metodología y los resultados de las pruebas unitarias
+% realizadas mediante Ceedling, Unity y CMock.
+% Incluir la tabla de resultados de los controladores:
+% SCLT3-8BT8, VNI8200XP-32, RS485 y MRF24J40.
+
+%----------------------------------------------------------------------------------------
+\subsection{Evaluación temporal del firmware}
+
+Para caracterizar el desempeño temporal del sistema, se realizaron mediciones sobre las operaciones de adquisición de entradas digitales, actualización de salidas digitales y comunicación inalámbrica. Los ensayos se efectuaron sobre el hardware de desarrollo, utilizando el contador de ciclos DWT para las operaciones locales y un osciloscopio digital para determinar la latencia de comunicación entre dispositivos.
+
+%----------------------------------------------------------------------------------------
 \subsubsection{Tiempo de procesamiento de las salidas digitales}
 
 El tiempo de procesamiento de las salidas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la llamada al controlador encargado de actualizar el VNI8200XP-32, excluyendo el tiempo de espera en la cola de mensajes y la latencia asociada a la planificación de tareas.
@@ -194,6 +215,7 @@ De las 1000 operaciones procesadas, 999 finalizaron correctamente y una devolvi�
 
 Se obtuvo un tiempo mínimo de 68,84~$\mu$s, un tiempo medio de aproximadamente 82,2~$\mu$s y un máximo observado de 326,36~$\mu$s. La repetición del ensayo presentó valores medios prácticamente equivalentes, lo que indica un comportamiento temporal estable para la operación evaluada. La diferencia entre el tiempo medio y el máximo observado puede atribuirse a la ejecución concurrente del sistema bajo FreeRTOS, dado que la medición incluye las posibles interrupciones o preempciones ocurridas durante la operación.
 
+%----------------------------------------------------------------------------------------
 \subsubsection{Tiempo de adquisición de las entradas digitales}
 
 El tiempo de adquisición de las entradas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la llamada al controlador encargado de efectuar la lectura del SCLT3-8BT8, excluyendo la actualización posterior de la imagen de entradas, el acceso al mutex y el período de espera de la tarea.
@@ -201,3 +223,28 @@ El tiempo de adquisición de las entradas digitales se evaluó mediante el conta
 Se registraron 1000 adquisiciones consecutivas con una frecuencia de núcleo de 50 MHz. Todas las operaciones finalizaron correctamente, sin registrarse errores durante el ensayo.
 
 El tiempo mínimo observado fue de 59,78~$\mu$s, el tiempo medio de 60,22~$\mu$s y el máximo de 69,38~$\mu$s. La reducida diferencia entre los valores mínimo, medio y máximo evidencia un comportamiento temporal estable durante la adquisición de las entradas digitales.
+
+%----------------------------------------------------------------------------------------
+\subsubsection{Latencia de la comunicación inalámbrica}
+
+La latencia de la comunicación inalámbrica entre una estación remota y la estación central se evaluó mediante un osciloscopio digital. Para ello, se instrumentó el firmware de ambos dispositivos utilizando una salida GPIO como referencia temporal. En la estación remota, la salida conmuta inmediatamente antes de iniciar la transmisión mediante el MRF24J40, mientras que en la estación central lo hace después de recibir y validar correctamente la trama.
+
+El ensayo se realizó mediante transmisiones periódicas de tramas IEEE 802.15.4. La figura \ref{fig:latencia_radio} muestra las señales registradas, donde el canal 2 (celeste) corresponde a la estación remota transmisora y el canal 1 (amarillo) a la estación central receptora.
+
+Se observaron tiempos de aproximadamente 4~ms entre los flancos correspondientes. Este intervalo comprende las operaciones de acceso al transceptor, la transmisión inalámbrica y el procesamiento de recepción hasta la validación de la trama. El resultado permite caracterizar la latencia extremo a extremo del enlace en las condiciones del ensayo.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=1.0\textwidth]{Figures/radio_test.png}
+	\caption{Medición de la latencia de comunicación inalámbrica entre la estación remota y la estación central mediante osciloscopio.}
+	\label{fig:latencia_radio}
+\end{figure}
+
+%----------------------------------------------------------------------------------------
+\section{Ensayos de integración}
+
+% PENDIENTE:
+% Incorporar las pruebas funcionales realizadas sobre el sistema integrado.
+% Documentar las condiciones de ensayo, los resultados esperados y obtenidos,
+% y las evidencias correspondientes.
+

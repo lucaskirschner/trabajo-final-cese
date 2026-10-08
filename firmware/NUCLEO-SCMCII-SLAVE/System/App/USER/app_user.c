@@ -124,7 +124,7 @@
 /**
  * @brief Period, in milliseconds, between radio transmissions.
  */
-#define APP_USER_UPDATE_PERIOD_MS          ((uint32_t)1000u)
+#define APP_USER_UPDATE_PERIOD_MS          ((uint32_t)50u)
 
 /**
  * @brief Period, in milliseconds, between digital I/O updates.
