@@ -725,6 +725,14 @@ static void app_radio_process_irq(void)
                                             &source,
                                             &data) == true)
             {
+                /*
+                 * Timing test: mark reception of a valid radio frame.
+                 */
+                if (app_radio_cfg.role == APP_RADIO_ROLE_PAN_COORDINATOR)
+                {
+                    HAL_GPIO_TogglePin(TP1_GPIO_Port, TP1_Pin);
+                }
+
                 queue_message =
                     app_radio_pack_queue_message(source, data);
 
@@ -898,6 +906,14 @@ static void app_radio_process_tx_queue(void)
             app_radio_build_data_frame(&packet,
                                        destination,
                                        data);
+
+            /*
+             * Timing test: mark the beginning of a radio transmission.
+             */
+            if (app_radio_cfg.role == APP_RADIO_ROLE_DEVICE)
+            {
+                HAL_GPIO_TogglePin(TP1_GPIO_Port, TP1_Pin);
+            }
 
             radio_status =
                 mrf24j40_write_tx_normal_fifo(&packet, true);

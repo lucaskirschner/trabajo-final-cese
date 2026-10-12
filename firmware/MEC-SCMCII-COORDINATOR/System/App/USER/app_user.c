@@ -67,6 +67,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 /* Private includes ----------------------------------------------------------*/
 
@@ -99,12 +100,17 @@
 /**
  * @brief Enable digital input/output mirror test.
  */
-#define APP_USER_TEST_IO_MIRROR
+/* #define APP_USER_TEST_IO_MIRROR */
 
 /**
  * @brief Enable single-byte RS485 echo test.
  */
 /* #define APP_USER_TEST_RS485_ECHO */
+
+/**
+ * @brief Enable system integration test.
+ */
+#define APP_USER_TEST_INTEGRATION
 
 /**
  * @brief Period, in milliseconds, between radio transmissions.
@@ -130,6 +136,22 @@
  * @brief PAN coordinator destination short address.
  */
 #define APP_USER_RADIO_DESTINATION         APP_RADIO_COORDINATOR_ADDRESS
+
+/**
+ * @brief Remote device short address.
+ */
+#define APP_USER_DEVICE_ADDRESS          ((uint16_t)0x0002u)
+
+/**
+ * @brief Coordinator polling period.
+ */
+#define APP_USER_INTEGRATION_PERIOD_MS   ((uint32_t)10u)
+
+/**
+ * @brief Output command update period.
+ */
+#define APP_USER_COMMAND_PERIOD_MS       ((uint32_t)1000u)
+
 
 /* USER CODE END PD */
 
@@ -162,6 +184,8 @@ static void app_user_radio_test(void);
 static void app_user_io_mirror_test(void);
 
 static void app_user_rs485_echo_test(void);
+
+static void app_user_integration_test(void);
 
 /* USER CODE END PFP */
 
@@ -442,6 +466,92 @@ static void app_user_rs485_echo_test(void)
     }
 }
 
+
+/**
+ * @brief Run the coordinator system integration test.
+ *
+ * @details
+ * Receives digital input images from the remote device and periodically
+ * transmits digital output commands through the app_radio public API.
+ */
+static void app_user_integration_test(void)
+{
+    uint32_t last_command_ms;
+    uint8_t output_image = 0x00u;
+
+    printf("\r\n");
+    printf("[APP_USER] Coordinator integration test\r\n");
+    printf("[APP_USER] Remote address: 0x%04X\r\n",
+           APP_USER_DEVICE_ADDRESS);
+
+    last_command_ms = osKernelGetTickCount();
+
+    for (;;)
+    {
+        uint16_t source;
+        uint8_t input_image;
+        app_radio_status_t status;
+        uint32_t now_ms;
+
+        /*
+         * Receive the latest digital input image from the remote station.
+         */
+        status = app_radio_receive(&source, &input_image);
+
+        if (status == APP_RADIO_OK)
+        {
+            if (source == APP_USER_DEVICE_ADDRESS)
+            {
+                printf(
+                    "[APP_USER] DIN RX src=0x%04X image=0x%02X\r\n",
+                    source,
+                    input_image);
+            }
+        }
+        else if (status != APP_RADIO_E_QUEUE_EMPTY)
+        {
+            printf("[APP_USER] RX error=%d\r\n",
+                   (int)status);
+        }
+
+        /*
+         * Periodically request an output image update.
+         *
+         * Alternate between all outputs OFF and all outputs ON.
+         */
+        now_ms = osKernelGetTickCount();
+
+        if ((uint32_t)(now_ms - last_command_ms) >=
+            APP_USER_COMMAND_PERIOD_MS)
+        {
+            status = app_radio_send(
+                APP_USER_DEVICE_ADDRESS,
+                output_image);
+
+            if (status == APP_RADIO_OK)
+            {
+                printf(
+                    "[APP_USER] DOUT TX dst=0x%04X image=0x%02X\r\n",
+                    APP_USER_DEVICE_ADDRESS,
+                    output_image);
+
+                output_image =
+                    (output_image == 0x00u) ? 0xFFu : 0x00u;
+
+                last_command_ms = now_ms;
+            }
+            else if (status != APP_RADIO_E_QUEUE_FULL)
+            {
+                printf("[APP_USER] TX error=%d\r\n",
+                       (int)status);
+            }
+        }
+
+        osDelay(APP_USER_INTEGRATION_PERIOD_MS);
+    }
+}
+
+
 /* USER CODE END 0 */
 
 /**
@@ -477,7 +587,11 @@ void app_user_task(void * argument)
     {
         /* USER CODE BEGIN app_task */
 
-#if defined(APP_USER_TEST_RADIO)
+#if defined(APP_USER_TEST_INTEGRATION)
+
+        app_user_integration_test();
+
+#elif defined(APP_USER_TEST_RADIO)
 
         app_user_radio_test();
 
