@@ -6,11 +6,13 @@ En este capítulo se presentan los ensayos realizados para verificar el funciona
 %----------------------------------------------------------------------------------------
 \section{Plan de ensayos}
 
-La validación del sistema se realizó siguiendo una metodología incremental, que comenzó con la verificación individual de los distintos bloques de hardware y firmware y continuó con ensayos de integración entre ambos niveles. Finalmente, se realizaron pruebas sobre el sistema completo, orientadas a comprobar el intercambio de información y la ejecución coordinada de las funciones implementadas entre la estación central y las estaciones remotas.
+La validación del sistema siguió una metodología incremental. Primero se verificaron individualmente los bloques de hardware y firmware, luego se realizaron ensayos de integración entre ambos niveles y, finalmente, se evaluó el sistema completo para comprobar el intercambio de información y la ejecución coordinada de las funciones entre la estación central y las estaciones remotas.
 
-Para cada ensayo se establecieron las condiciones iniciales, la configuración utilizada, el procedimiento de prueba y los resultados esperados. Las pruebas de hardware se orientaron principalmente a verificar las etapas de alimentación, las entradas y salidas digitales y las interfaces de comunicación. Los ensayos de firmware contemplaron la comprobación de los controladores y servicios desarrollados, la ejecución de las tareas de FreeRTOS y la temporización de las operaciones relevantes. Por último, las pruebas de integración evaluaron el funcionamiento conjunto de estos elementos mediante operaciones representativas del sistema.
+Para cada ensayo se establecieron las condiciones iniciales, la configuración, el procedimiento de prueba y los resultados esperados. Las pruebas de hardware se orientaron a verificar las etapas de alimentación, las entradas y salidas digitales y las interfaces de comunicación. Los ensayos de firmware contemplaron la comprobación de los controladores y servicios desarrollados, la ejecución de las tareas de FreeRTOS y la temporización de las operaciones relevantes. Por último, las pruebas de integración evaluaron el funcionamiento conjunto de estos elementos mediante operaciones representativas del sistema.
 
-Los ensayos se realizaron en condiciones controladas de laboratorio mediante el instrumental y las herramientas de desarrollo indicados en la tabla \ref{tab:instrumental_ensayos}. La figura \ref{fig:banco_ensayos} muestra el banco de trabajo utilizado. Los criterios de aceptación se establecieron a partir de los requerimientos funcionales del sistema y de las especificaciones de los componentes utilizados. Según el tipo de ensayo, se consideraron los niveles de tensión y corriente, las características temporales de las señales, la correcta ejecución de las funciones y el intercambio de información entre los distintos módulos.
+Los ensayos se realizaron en condiciones controladas de laboratorio con el instrumental y las herramientas indicados en la tabla \ref{tab:instrumental_ensayos}. La figura \ref{fig:banco_ensayos} muestra el banco de trabajo utilizado. Los criterios de aceptación se establecieron a partir de los requerimientos funcionales del sistema y las especificaciones de los componentes. Según el ensayo, se consideraron los niveles de tensión y corriente, las características temporales de las señales, la ejecución de las funciones y el intercambio de información entre los módulos.
+
+Debido a la falta de disponibilidad de los circuitos integrados SCLT3-8BT8 y VNI8200XP-32 durante la fabricación de los prototipos, las placas fueron entregadas sin estos componentes. Por este motivo, los ensayos de entradas y salidas digitales se realizaron sobre la plataforma de evaluación NUCLEO-PLC01, que incorpora ambos dispositivos. Esta alternativa permitió verificar su funcionamiento y la comunicación mediante SPI, aunque la validación de estas etapas sobre el PCB desarrollado quedó pendiente.
 
 \begin{table}[H]
 	\centering
@@ -92,16 +94,16 @@ Los resultados obtenidos permitieron verificar el correcto funcionamiento de las
 %----------------------------------------------------------------------------------------
 \subsection{Ensayo de la etapa de entradas digitales}
 
-Para verificar el funcionamiento de la etapa de entradas digitales, se aplicó sobre el canal 1 una señal cuadrada de 10 Hz con niveles de 0 V y 24 V. El microcontrolador realizó periódicamente la lectura mediante la interfaz SPI del SCLT3-8BT8 dentro de un \textit{superloop} y replicó el estado detectado sobre el pin GPIO0 de la placa.
+Para verificar el funcionamiento de la etapa de entradas digitales, se aplicó al canal 1 una señal cuadrada de 10 Hz con niveles de 0 V y 24 V. El microcontrolador realizó periódicamente la lectura del SCLT3-8BT8 mediante la interfaz SPI, dentro de un \textit{superloop}, y replicó el estado detectado sobre el pin GPIO0 de la placa.
 
-La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_entradas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la señal aplicada a la entrada digital, mientras que el canal 2 (celeste) corresponde al estado obtenido en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la detección de los niveles de 0 V y 24 V, su adquisición mediante SPI y su posterior procesamiento por el microcontrolador.
+La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_entradas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la señal aplicada a la entrada digital, mientras que el canal 2 (celeste) representa el estado obtenido en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la detección de los niveles de 0 V y 24 V, su adquisición mediante SPI y su posterior procesamiento por el microcontrolador.
 
 %----------------------------------------------------------------------------------------
 \subsection{Ensayo de la etapa de salidas digitales}
 
-Para verificar el funcionamiento de la etapa de salidas digitales, se configuró la conmutación periódica del canal 1 a una frecuencia de 1 Hz. El microcontrolador actualizó su estado mediante la interfaz SPI del VNI8200XP-32 dentro de un \textit{superloop} y replicó simultáneamente el estado lógico comandado sobre el pin GPIO0 de la placa.
+Para verificar el funcionamiento de la etapa de salidas digitales, se configuró la conmutación periódica del canal 1 a una frecuencia de 1 Hz. El microcontrolador actualizó su estado mediante la interfaz SPI del VNI8200XP-32, dentro de un \textit{superloop}, y replicó simultáneamente el estado lógico comandado sobre el pin GPIO0 de la placa.
 
-La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la salida industrial de 24 V, mientras que el canal 2 (celeste) corresponde a la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la transmisión del estado mediante SPI y la conmutación de la salida industrial de acuerdo con el comando establecido por el microcontrolador.
+La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} muestra las señales registradas con el osciloscopio. El canal 1 (amarillo) corresponde a la salida industrial de 24 V, mientras que el canal 2 (celeste) representa la señal obtenida en GPIO0. La correspondencia entre ambas formas de onda permitió comprobar la transmisión del estado mediante SPI y la conmutación de la salida industrial de acuerdo con el comando establecido por el microcontrolador.
 
 \begin{figure}[!htpb]
 	\centering
@@ -127,9 +129,9 @@ La figura \ref{fig:ensayos_io_digitales}\subref{fig:ensayo_salidas_digitales} mu
 
 Para verificar el funcionamiento de la interfaz RS485, se conectó la placa a una computadora mediante un adaptador USB--RS485 y se configuró la comunicación a 115200 bit/s, con 8 bits de datos, sin paridad y un bit de parada. Desde RealTerm se transmitió la trama de 8 bytes \texttt{AA 55 01 02 03 04 12 34} para comprobar el intercambio de información binaria sin alteraciones.
 
-El microcontrolador recibió la trama mediante UART7, verificó su correspondencia con la secuencia esperada y registró el resultado mediante SWO. A continuación, el transceptor RS485 se conmutó a modo de transmisión y retransmitió la misma trama hacia la computadora, retornando luego al modo de recepción.
+El microcontrolador recibió la trama mediante UART7, verificó su correspondencia con la secuencia esperada y registró el resultado mediante SWO. A continuación, el transceptor RS485 se conmutó al modo de transmisión y retransmitió la misma trama hacia la computadora. Luego, retornó al modo de recepción.
 
-La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura \ref{fig:rs485_realterm} se observa la trama retransmitida en RealTerm y, en la figura \ref{fig:rs485_swo}, el registro de su recepción, validación y retransmisión mediante SWO. La coincidencia entre ambas tramas permitió comprobar la comunicación bidireccional y la correcta conmutación entre los modos de recepción y transmisión.
+La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura \ref{fig:rs485_realterm} se observa la trama retransmitida en RealTerm y, en la figura \ref{fig:rs485_swo}, el registro de su recepción, validación y retransmisión mediante SWO. La coincidencia entre las tramas transmitida y recibida permitió comprobar la comunicación bidireccional y la correcta conmutación entre los modos de recepción y transmisión.
 
 \begin{figure}[ht]
 	\centering
@@ -158,7 +160,7 @@ La figura \ref{fig:ensayo_rs485} muestra los resultados obtenidos. En la figura 
 
 Para verificar el funcionamiento de la interfaz inalámbrica, se realizó una prueba de comunicación punto a punto entre dos placas equipadas con transceptores MRF24J40. Una de ellas se configuró como dispositivo con dirección corta \texttt{0x0002}, mientras que la segunda se configuró como coordinador con dirección \texttt{0x0001}. Ambos nodos utilizaron el identificador de red PAN \texttt{0x1234}.
 
-Durante el ensayo, el dispositivo transmitió la trama de prueba de 12 bytes \texttt{41 88 01 34 12 01 00 02 00 01 02 03}. La transmisión se inició mediante una interrupción externa asociada al pulsador de usuario y se realizó sin solicitud de ACK. La finalización de la transmisión fue detectada mediante la interrupción generada por el MRF24J40 y registrada mediante SWO. En el coordinador, la recepción generó una nueva interrupción del transceptor, tras la cual se leyó la FIFO y se registraron la longitud y el contenido de la trama recibida.
+Durante el ensayo, el dispositivo transmitió la trama de prueba de 12 bytes \texttt{41 88 01 34 12 01 00 02 00 01 02 03}. La transmisión se inició mediante una interrupción externa asociada al pulsador de usuario y se realizó sin solicitud de ACK. La finalización de la transmisión fue detectada mediante la interrupción generada por el MRF24J40 y registrada mediante SWO. En el coordinador, la recepción generó una interrupción del transceptor, tras la cual se leyó la FIFO y se registraron la longitud y el contenido de la trama recibida.
 
 La figura \ref{fig:ensayo_radio} muestra los registros obtenidos durante el ensayo. En la figura \ref{fig:radio_tx_swo} se observa la trama enviada por el dispositivo y la finalización de la transmisión, mientras que en la figura \ref{fig:radio_rx_swo} se presenta la trama recibida por el coordinador. La coincidencia entre los 12 bytes transmitidos y recibidos permitió comprobar la correcta comunicación inalámbrica entre ambos nodos, así como el funcionamiento de la interfaz SPI y de las interrupciones utilizadas para gestionar el MRF24J40.
 
@@ -184,7 +186,6 @@ La figura \ref{fig:ensayo_radio} muestra los registros obtenidos durante el ensa
 	\label{fig:ensayo_radio}
 \end{figure}
 
-
 %----------------------------------------------------------------------------------------
 \section{Ensayos de firmware}
 
@@ -193,52 +194,114 @@ En esta sección se presentan los ensayos realizados para verificar el funcionam
 %----------------------------------------------------------------------------------------
 \subsection{Pruebas unitarias}
 
-% PENDIENTE:
-% Incorporar la metodología y los resultados de las pruebas unitarias
-% realizadas mediante Ceedling, Unity y CMock.
-% Incluir la tabla de resultados de los controladores:
-% SCLT3-8BT8, VNI8200XP-32, RS485 y MRF24J40.
+Las pruebas unitarias se realizaron sobre los controladores de firmware correspondientes a las entradas digitales, las salidas digitales y las interfaces de comunicación RS485 e inalámbrica. Para su ejecución se utilizó Ceedling, junto con Unity como framework de pruebas y CMock para simular las funciones de acceso al hardware. Esta metodología permitió verificar el comportamiento de los controladores de forma aislada, sin depender de los dispositivos físicos.
+
+Los ensayos contemplaron las operaciones nominales, la validación de parámetros, el tratamiento de condiciones de error y la interpretación de la información intercambiada con los periféricos. Las pruebas se organizaron en cuatro conjuntos, correspondientes a los controladores SCLT3-8BT8, VNI8200XP-32, RS485 y MRF24J40.
+
+%----------------------------------------------------------------------------------------
+\subsubsection{Controlador de entradas digitales SCLT3-8BT8}
+
+Se desarrollaron nueve pruebas unitarias sobre el archivo \texttt{sclt38bt8.c} para verificar la adquisición y el procesamiento de las tramas recibidas desde el SCLT3-8BT8. Los casos contemplaron la validación de punteros, la propagación de errores de comunicación y la decodificación de una trama válida con el patrón de entradas \texttt{0x55}.
+
+Además, se verificó la detección de condiciones anómalas mediante tramas simuladas, entre ellas la pérdida de alimentación, los errores en los bits de parada, la paridad incorrecta, la subtensión y la sobretemperatura. Estas pruebas permitieron comprobar la interpretación de los campos de diagnóstico y la devolución de los códigos de error correspondientes.
+
+%----------------------------------------------------------------------------------------
+\subsubsection{Controlador de salidas digitales VNI8200XP-32}
+
+Se desarrollaron nueve pruebas unitarias sobre el archivo \texttt{vni8200xp32.c} para verificar la generación de comandos y el procesamiento de las respuestas del VNI8200XP-32. Se comprobó la construcción de una trama válida para actualizar las salidas con el patrón \texttt{0x55}, así como la correcta interpretación de una respuesta sin fallas.
+
+Los casos adicionales evaluaron la propagación de errores de comunicación, la detección de paridad incorrecta y el reconocimiento de las condiciones de diagnóstico reportadas por el integrado. Estas comprendieron fallas de comunicación SPI, realimentación del convertidor DC-DC, advertencia de temperatura, señal de alimentación y sobretemperatura de canal.
+
+%----------------------------------------------------------------------------------------
+\subsubsection{Controlador de comunicación RS485}
+
+Se desarrollaron dieciocho pruebas unitarias sobre el archivo \texttt{rs485.c} para verificar el funcionamiento de la comunicación RS485, implementada mediante operaciones de transmisión y recepción por interrupciones. Los ensayos contemplaron la inicialización, la selección del modo de recepción y el rechazo de operaciones solicitadas en estados no permitidos.
+
+Se verificaron el inicio y la finalización de las transmisiones, la recepción de datos y su disponibilidad para la aplicación. También se evaluaron las restricciones asociadas al funcionamiento semidúplex, entre ellas el rechazo de operaciones simultáneas, la cancelación de transmisiones y recepciones activas y la recuperación del estado del controlador ante errores de UART.
+
+%----------------------------------------------------------------------------------------
+\subsubsection{Controlador de comunicación inalámbrica MRF24J40}
+
+Se desarrollaron veinticuatro pruebas unitarias sobre el archivo \texttt{mrf24j40.c} para verificar las principales operaciones del transceptor MRF24J40. Los ensayos comprendieron la inicialización del transceptor, la configuración como coordinador o dispositivo y la escritura del identificador de red PAN y de la dirección corta.
+
+También se evaluaron el procesamiento de interrupciones, la lectura y validación de tramas desde la FIFO de recepción y la carga de tramas en la FIFO de transmisión. Se verificó la configuración de solicitudes de reconocimiento ACK y la interpretación de los resultados de transmisión, incluidas las operaciones satisfactorias, el agotamiento de reintentos y las fallas de evaluación de canal. Asimismo, se comprobó el tratamiento de parámetros inválidos y la propagación de errores de acceso al hardware.
+
+%----------------------------------------------------------------------------------------
+\subsubsection{Resultados de las pruebas unitarias}
+
+Los resultados de la ejecución de los cuatro conjuntos de pruebas se presentan en la tabla \ref{tab:pruebas_unitarias}. En total, se ejecutaron 60 pruebas unitarias, todas satisfactorias, sin registrarse fallos ni casos ignorados.
+
+\begin{table}[H]
+	\centering
+	\caption{Resultados de las pruebas unitarias de los controladores de firmware.}
+	\begin{tabular}{l r r r}
+		\toprule
+		\textbf{Controlador} & \textbf{Pruebas} & \textbf{Fallos} & \textbf{Ignoradas} \\
+		\midrule
+		SCLT3-8BT8   & 9  & 0 & 0 \\
+		VNI8200XP-32 & 9  & 0 & 0 \\
+		RS485        & 18 & 0 & 0 \\
+		MRF24J40     & 24 & 0 & 0 \\
+		\midrule
+		\textbf{Total} & \textbf{60} & \textbf{0} & \textbf{0} \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:pruebas_unitarias}
+\end{table}
+
+Los resultados permitieron verificar el comportamiento de los controladores frente a las condiciones contempladas en los casos de prueba. Esta validación se complementó con los ensayos sobre hardware y las mediciones temporales, dado que las pruebas unitarias no incluyeron la ejecución de las funciones reales de acceso a los periféricos.
 
 %----------------------------------------------------------------------------------------
 \subsection{Evaluación temporal del firmware}
 
-Para caracterizar el desempeño temporal del sistema, se realizaron mediciones sobre las operaciones de adquisición de entradas digitales, actualización de salidas digitales y comunicación inalámbrica. Los ensayos se efectuaron sobre el hardware de desarrollo, utilizando el contador de ciclos DWT para las operaciones locales y un osciloscopio digital para determinar la latencia de comunicación entre dispositivos.
+Para caracterizar el desempeño temporal del sistema, se realizaron mediciones sobre las operaciones de adquisición de entradas digitales, actualización de salidas digitales y comunicación inalámbrica. Los ensayos se efectuaron sobre el hardware de desarrollo. Para las operaciones locales se utilizó el contador de ciclos DWT, mientras que la latencia de comunicación entre dispositivos se determinó mediante un osciloscopio digital.
 
 %----------------------------------------------------------------------------------------
 \subsubsection{Tiempo de procesamiento de las salidas digitales}
 
-El tiempo de procesamiento de las salidas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la llamada al controlador encargado de actualizar el VNI8200XP-32, excluyendo el tiempo de espera en la cola de mensajes y la latencia asociada a la planificación de tareas.
+El tiempo de procesamiento de las salidas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la ejecución de la función \texttt{vni8200xp32\_write\_outputs()}, encargada de actualizar el VNI8200XP-32. Se excluyeron el tiempo de espera en la cola de mensajes y la latencia asociada a la planificación de tareas.
 
-Para el ensayo se generaron 1000 solicitudes consecutivas de actualización desde la tarea de aplicación, alternando los patrones \texttt{0x00} y \texttt{0xFF}. La frecuencia del núcleo durante la prueba fue de 50 MHz.
+Se generaron 1000 solicitudes consecutivas de actualización desde la tarea de aplicación, alternando los patrones \texttt{0x00} y \texttt{0xFF}, con una frecuencia de núcleo de 50 MHz. Todas las operaciones finalizaron correctamente, sin registrarse errores durante el ensayo.
 
-De las 1000 operaciones procesadas, 999 finalizaron correctamente y una devolvió un estado de error. Dado que el objetivo del ensayo fue caracterizar el tiempo de ejecución de las operaciones válidas y que esta condición no afectó la continuidad de la prueba, los resultados temporales se calcularon sobre las 999 operaciones satisfactorias.
-
-Se obtuvo un tiempo mínimo de 68,84~$\mu$s, un tiempo medio de aproximadamente 82,2~$\mu$s y un máximo observado de 326,36~$\mu$s. La repetición del ensayo presentó valores medios prácticamente equivalentes, lo que indica un comportamiento temporal estable para la operación evaluada. La diferencia entre el tiempo medio y el máximo observado puede atribuirse a la ejecución concurrente del sistema bajo FreeRTOS, dado que la medición incluye las posibles interrupciones o preempciones ocurridas durante la operación.
+El tiempo mínimo observado fue de 68,84~$\mu$s, el tiempo medio de 82,2~$\mu$s y el máximo de 90,12~$\mu$s. La reducida diferencia entre los valores mínimo, medio y máximo indica un comportamiento temporal estable durante la actualización de las salidas digitales.
 
 %----------------------------------------------------------------------------------------
 \subsubsection{Tiempo de adquisición de las entradas digitales}
 
-El tiempo de adquisición de las entradas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la llamada al controlador encargado de efectuar la lectura del SCLT3-8BT8, excluyendo la actualización posterior de la imagen de entradas, el acceso al mutex y el período de espera de la tarea.
+El tiempo de adquisición de las entradas digitales se evaluó mediante el contador de ciclos DWT del núcleo Cortex-M. La medición se realizó directamente sobre la ejecución de la función \texttt{sclt38bt8\_read\_inputs()}, encargada de efectuar la lectura del SCLT3-8BT8. Se excluyeron la actualización posterior de la imagen de entradas, el acceso al mutex y el período de espera de la tarea.
 
 Se registraron 1000 adquisiciones consecutivas con una frecuencia de núcleo de 50 MHz. Todas las operaciones finalizaron correctamente, sin registrarse errores durante el ensayo.
 
-El tiempo mínimo observado fue de 59,78~$\mu$s, el tiempo medio de 60,22~$\mu$s y el máximo de 69,38~$\mu$s. La reducida diferencia entre los valores mínimo, medio y máximo evidencia un comportamiento temporal estable durante la adquisición de las entradas digitales.
+El tiempo mínimo observado fue de 59,78~$\mu$s, el tiempo medio de 60,22~$\mu$s y el máximo de 69,38~$\mu$s. La reducida diferencia entre los valores mínimo, medio y máximo indica un comportamiento temporal estable durante la adquisición de las entradas digitales.
 
 %----------------------------------------------------------------------------------------
 \subsubsection{Latencia de la comunicación inalámbrica}
 
-La latencia de la comunicación inalámbrica entre una estación remota y la estación central se evaluó mediante un osciloscopio digital. Para ello, se instrumentó el firmware de ambos dispositivos utilizando una salida GPIO como referencia temporal. En la estación remota, la salida conmuta inmediatamente antes de iniciar la transmisión mediante el MRF24J40, mientras que en la estación central lo hace después de recibir y validar correctamente la trama.
+La latencia de la comunicación inalámbrica entre una estación remota y la estación central se evaluó mediante un osciloscopio digital. Para ello, se instrumentó el firmware de ambos dispositivos mediante una salida GPIO utilizada como referencia temporal. En la estación remota, la salida conmuta inmediatamente antes de iniciar la transmisión mediante el MRF24J40, mientras que en la estación central lo hace después de recibir y validar correctamente la trama.
 
-El ensayo se realizó mediante transmisiones periódicas de tramas IEEE 802.15.4. La figura \ref{fig:latencia_radio} muestra las señales registradas, donde el canal 2 (celeste) corresponde a la estación remota transmisora y el canal 1 (amarillo) a la estación central receptora.
+El ensayo se realizó mediante transmisiones periódicas de tramas IEEE 802.15.4. La figura \ref{fig:latencia_radio}\subref{fig:latencia_radio_general} muestra una vista general de las señales registradas, mientras que la figura \ref{fig:latencia_radio}\subref{fig:latencia_radio_zoom} presenta una ampliación de los flancos utilizados para determinar la latencia. En ambas capturas, el canal 2 (celeste) corresponde a la estación remota transmisora y el canal 1 (amarillo) a la estación central receptora.
 
-Se observaron tiempos de aproximadamente 4~ms entre los flancos correspondientes. Este intervalo comprende las operaciones de acceso al transceptor, la transmisión inalámbrica y el procesamiento de recepción hasta la validación de la trama. El resultado permite caracterizar la latencia extremo a extremo del enlace en las condiciones del ensayo.
+Se observaron tiempos de aproximadamente 4~ms entre los flancos correspondientes. Este intervalo comprende las operaciones de acceso al transceptor, la transmisión inalámbrica y el procesamiento de la recepción hasta la validación de la trama. El resultado permite caracterizar la latencia extremo a extremo del enlace en las condiciones del ensayo.
 
-\begin{figure}[H]
+\begin{figure}[!htpb]
 	\centering
-	\includegraphics[width=1.0\textwidth]{Figures/radio_test.png}
-	\caption{Medición de la latencia de comunicación inalámbrica entre la estación remota y la estación central mediante osciloscopio.}
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/radio_test.png}
+		\caption{Vista general de las señales registradas.}
+		\label{fig:latencia_radio_general}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.48\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{Figures/radio_test_zoom.png}
+		\caption{Vista ampliada de los flancos de referencia.}
+		\label{fig:latencia_radio_zoom}
+	\end{subfigure}
+	\caption[Medición de la latencia de comunicación inalámbrica]{Señales registradas mediante osciloscopio durante la medición de la latencia de comunicación inalámbrica entre la estación remota y la estación central.}
 	\label{fig:latencia_radio}
 \end{figure}
+
 
 %----------------------------------------------------------------------------------------
 \section{Ensayos de integración}
