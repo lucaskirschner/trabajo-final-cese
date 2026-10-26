@@ -71,7 +71,7 @@
  * calls to vni8200xp32_write_outputs() is measured using the DWT cycle
  * counter.
  */
-#define APP_DOUT_TEST_TIMING
+/* #define APP_DOUT_TEST_TIMING */
 
 /**
  * @brief Number of digital-output operations measured during the test.

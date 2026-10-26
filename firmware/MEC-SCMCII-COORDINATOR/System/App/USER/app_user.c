@@ -140,7 +140,7 @@
 /**
  * @brief Remote device short address.
  */
-#define APP_USER_DEVICE_ADDRESS          ((uint16_t)0x0002u)
+#define APP_USER_DEVICE_ADDRESS          ((uint16_t)0x0001u)
 
 /**
  * @brief Coordinator polling period.

@@ -67,7 +67,7 @@
 /**
  * @brief Enable digital-input execution-time measurement.
  */
-#define APP_DIN_TEST_TIMING
+/* #define APP_DIN_TEST_TIMING */
 
 /**
  * @brief Number of digital-input operations measured during the test.
