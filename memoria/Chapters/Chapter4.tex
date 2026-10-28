@@ -66,7 +66,7 @@ Debido a la falta de disponibilidad de los circuitos integrados SCLT3-8BT8 y VNI
 %----------------------------------------------------------------------------------------
 \section{Ensayos de hardware}
 
-En esta sección se presentan los ensayos realizados sobre los principales bloques de hardware del sistema. Las pruebas comprenden la verificación de las tensiones de alimentación y el consumo de corriente, el funcionamiento de las entradas y salidas digitales y las señales asociadas a las interfaces de comunicación. Para cada ensayo se indican las condiciones de medición y los resultados obtenidos mediante el instrumental presentado en la sección anterior.
+En esta sección se presentan los ensayos realizados sobre los principales bloques de hardware del sistema. Las pruebas comprenden la verificación de las tensiones de alimentación y el consumo de corriente, el funcionamiento de las entradas y salidas digitales, y las señales asociadas a las interfaces de comunicación. Para cada ensayo se indican las condiciones de medición y los resultados obtenidos mediante el instrumental presentado en la sección anterior.
 
 %----------------------------------------------------------------------------------------
 \subsection{Ensayo de las etapas de alimentación y consumo}
@@ -303,11 +303,117 @@ Se observaron tiempos de aproximadamente 4~ms entre los flancos correspondientes
 \end{figure}
 
 
+
+
 %----------------------------------------------------------------------------------------
 \section{Ensayos de integración}
 
-% PENDIENTE:
-% Incorporar las pruebas funcionales realizadas sobre el sistema integrado.
-% Documentar las condiciones de ensayo, los resultados esperados y obtenidos,
-% y las evidencias correspondientes.
+En esta sección se presentan los ensayos realizados para verificar el funcionamiento conjunto de los módulos de hardware y firmware del sistema. Las pruebas se orientaron a comprobar la adquisición remota de entradas digitales, el control de las salidas industriales y el comportamiento de la comunicación inalámbrica ante interrupciones y reinicios.
+
+Para los ensayos se utilizó una estación central implementada sobre la placa MEC-V1.0 y una estación remota basada en la plataforma NUCLEO-H563, junto con la placa de expansión NUCLEO-PLC01. Ambas estaciones incorporaron transceptores MRF24J40 y ejecutaron el firmware desarrollado sobre FreeRTOS.
+
+La estación central se configuró como coordinador de la red IEEE 802.15.4, con dirección corta \texttt{0x0000}, mientras que la estación remota se configuró como dispositivo, con dirección corta \texttt{0x0001}. Ambos nodos utilizaron el identificador de red PAN \texttt{0x1234}.
+
+La validación se realizó mediante estímulos eléctricos aplicados a las entradas digitales, comandos transmitidos desde la estación central y observación de las salidas industriales. Los eventos de adquisición, transmisión, recepción y procesamiento se registraron mediante la interfaz SWO de ambas estaciones.
+
+%----------------------------------------------------------------------------------------
+\subsection{Adquisición y reporte de entradas digitales}
+
+Para verificar la adquisición remota de entradas digitales, se aplicaron señales de 24 V a los ocho canales de entrada de la NUCLEO-PLC01. Cada canal se activó y desactivó individualmente, mientras se supervisaron los registros de ambas estaciones.
+
+La estación remota adquirió los estados mediante el SCLT3-8BT8, actualizó la imagen de entradas y transmitió los cambios a través del enlace inalámbrico. La estación central recibió las tramas y registró la imagen correspondiente.
+
+Como ejemplo, al aplicar y retirar 24 V sobre el primer canal, se observó la secuencia \texttt{0x00}, \texttt{0x01} y \texttt{0x00}. Los registros de ambas estaciones mostraron la correspondencia entre los estados transmitidos y recibidos, con transmisiones satisfactorias y sin reintentos.
+
+El procedimiento se repitió sobre los ocho canales de entrada y en todos los casos se verificó la detección del cambio y su recepción en la estación central. Estos resultados permitieron comprobar el funcionamiento conjunto de la etapa de adquisición industrial, la comunicación SPI, el procesamiento del firmware y la transmisión inalámbrica de los estados digitales.
+
+%----------------------------------------------------------------------------------------
+\subsection{Control remoto de salidas digitales}
+
+Para verificar el control remoto de las salidas digitales, se configuró la estación central para transmitir periódicamente comandos que alternaban los patrones \texttt{0x00} y \texttt{0xFF}, correspondientes a la desactivación y activación de los ocho canales de salida de la estación remota.
+
+Los comandos se transmitieron mediante el enlace IEEE 802.15.4 y fueron procesados por el firmware de la estación remota. A continuación, se actualizaron las salidas industriales mediante la interfaz SPI del VNI8200XP-32.
+
+Los registros SWO permitieron verificar la transmisión y recepción de los comandos, así como las solicitudes de actualización de las salidas. Además, se comprobó visualmente la conmutación de los ocho canales de la NUCLEO-PLC01 de acuerdo con los patrones enviados desde la estación central.
+
+Las transmisiones realizadas con ambas estaciones operativas finalizaron satisfactoriamente, sin reintentos en los casos registrados. Estos resultados permitieron verificar el funcionamiento de la cadena de control desde la estación central hasta las salidas industriales de la estación remota.
+
+%----------------------------------------------------------------------------------------
+\subsection{Interrupción y recuperación de la comunicación inalámbrica}
+
+Para evaluar el comportamiento del sistema ante una interrupción del enlace inalámbrico, se mantuvo la transmisión periódica de comandos desde la estación central mientras se desconectó temporalmente la estación remota.
+
+Durante la desconexión, el controlador de comunicación inalámbrica de la estación central registró cuatro transmisiones consecutivas sin reconocimiento ACK, tras agotar los reintentos configurados. Al restablecerse el funcionamiento de la estación remota, las transmisiones volvieron a completarse satisfactoriamente, sin necesidad de reiniciar la estación central.
+
+Los resultados permitieron comprobar la detección de transmisiones no reconocidas y la recuperación del intercambio de información una vez restablecida la disponibilidad de la estación remota.
+
+%----------------------------------------------------------------------------------------
+\subsection{Estado de las salidas digitales durante el reinicio}
+
+Para verificar el comportamiento de las salidas digitales durante la inicialización de la estación remota, se reinició el dispositivo y se observó el estado de los ocho canales de salida.
+
+Durante el arranque, las salidas permanecieron desactivadas hasta que el firmware completó la inicialización y comenzó a procesar los comandos recibidos desde la estación central.
+
+Este resultado permitió comprobar que la estación remota establece inicialmente un estado de salidas desactivadas, lo que evita activaciones no solicitadas durante la secuencia de arranque.
+
+%----------------------------------------------------------------------------------------
+\subsection{Resultados de los ensayos de integración}
+
+Los resultados de las pruebas realizadas se resumen en la tabla \ref{tab:resultados_integracion}. Todos los ensayos funcionales contemplados finalizaron satisfactoriamente en las condiciones evaluadas.
+
+\begin{table}[H]
+	\centering
+	\caption{Resultados de los ensayos de integración del sistema.}
+	\small
+	\renewcommand{\arraystretch}{1.2}
+	\begin{tabular}{
+			>{\raggedright\arraybackslash}p{0.23\textwidth}
+			>{\raggedright\arraybackslash}p{0.30\textwidth}
+			>{\raggedright\arraybackslash}p{0.37\textwidth}
+		}
+		\toprule
+		\textbf{Ensayo} & \textbf{Resultado esperado} & \textbf{Resultado obtenido} \\
+		\midrule
+		Adquisición de entradas
+		& Reporte de los cambios de estado.
+		& Cambios detectados y recibidos en los ocho canales. \\
+		
+		Control remoto de salidas
+		& Actualización según los comandos recibidos.
+		& Conmutación de los ocho canales con patrones \texttt{0x00} y \texttt{0xFF}. \\
+		
+		Interrupción de comunicación
+		& Detección de transmisiones sin ACK.
+		& Cuatro transmisiones consecutivas sin ACK. \\
+		
+		Recuperación de comunicación
+		& Restablecimiento del enlace inalámbrico.
+		& Transmisiones satisfactorias tras la reconexión. \\
+		
+		Reinicio de estación remota
+		& Salidas desactivadas durante el arranque.
+		& Ocho salidas desactivadas durante el arranque. \\
+		\bottomrule
+	\end{tabular}
+	\label{tab:resultados_integracion}
+\end{table}
+
+Los resultados permitieron verificar el funcionamiento integrado de las principales funciones de adquisición, comunicación y actuación del sistema. Asimismo, se comprobó la recuperación del intercambio inalámbrico tras una interrupción y el establecimiento de un estado inicial de salidas desactivadas.
+
+%----------------------------------------------------------------------------------------
+\section{Análisis de resultados}
+
+Los ensayos realizados permitieron evaluar el funcionamiento de los principales bloques de hardware, los controladores de firmware y su integración en una arquitectura distribuida compuesta por una estación central y una estación remota.
+
+En relación con el hardware, las mediciones de alimentación mostraron tensiones próximas a los valores nominales de 5 V y 3,3 V, con un consumo de 21 mA sobre la entrada de 24 V en condiciones de reposo. Los ensayos de entradas y salidas digitales permitieron comprobar la adquisición de señales industriales y la conmutación de salidas de 24 V mediante los dispositivos SCLT3-8BT8 y VNI8200XP-32. Asimismo, las pruebas de las interfaces RS485 e inalámbrica verificaron el intercambio de información entre dispositivos.
+
+En cuanto al firmware, las 60 pruebas unitarias ejecutadas finalizaron satisfactoriamente, sin fallos ni casos ignorados. Estos resultados permitieron verificar el comportamiento de los controladores frente a las condiciones nominales y de error contempladas. Las mediciones temporales mostraron tiempos medios de 60,22~$\mu$s para la adquisición de entradas y de 82,2~$\mu$s para la actualización de salidas, mientras que la latencia de comunicación inalámbrica entre estaciones fue de aproximadamente 4~ms.
+
+Los ensayos de integración complementaron estas verificaciones mediante operaciones representativas del sistema completo. Se comprobó la adquisición y transmisión de los estados de las ocho entradas digitales desde la estación remota hacia la central, así como la recepción de comandos y la conmutación de las ocho salidas industriales. También se verificaron la recuperación de la comunicación inalámbrica tras una interrupción y el estado desactivado de las salidas durante el reinicio de la estación remota.
+
+No obstante, la validación presentó algunas limitaciones. Debido a la falta de disponibilidad de los circuitos integrados SCLT3-8BT8 y VNI8200XP-32 durante la fabricación de los prototipos, las etapas de entradas y salidas industriales se evaluaron sobre la plataforma NUCLEO-PLC01. Por lo tanto, aunque se verificó el funcionamiento de ambos dispositivos y su integración con el firmware, quedó pendiente la validación de estas etapas sobre el PCB desarrollado.
+
+Asimismo, los ensayos de integración se realizaron con una estación central y una estación remota, por lo que no se evaluó el comportamiento de una red con múltiples estaciones. Tampoco se caracterizaron experimentalmente los tiempos máximos de respuesta del sistema integrado, el desempeño del enlace ante distintas condiciones de propagación ni la desactivación automática de las salidas ante una pérdida prolongada de comunicación.
+
+En conjunto, los resultados permitieron demostrar la viabilidad funcional de la arquitectura propuesta y el funcionamiento coordinado de sus principales componentes. Las limitaciones identificadas delimitan el alcance de la validación realizada y establecen los aspectos que deberán abordarse en futuras etapas de desarrollo.
 
