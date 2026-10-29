@@ -1,37 +1,53 @@
-% Chapter Template
-
-\chapter{Conclusiones} % Main chapter title
-
-\label{Chapter5} % Change X to a consecutive number; for referencing this chapter elsewhere, use \ref{ChapterX}
-Todos los capítulos deben comenzar con un breve párrafo introductorio que indique cuál es el contenido que se encontrará al leerlo.  La redacción sobre el contenido de la memoria debe hacerse en presente y todo lo referido al proyecto en pasado, siempre de modo impersonal.
-
+\chapter{Conclusiones}
+\label{Chapter5}
+En este capítulo se presentan las conclusiones del trabajo, a partir del análisis de los objetivos alcanzados y las limitaciones identificadas durante su desarrollo. Asimismo, se describen los conocimientos adquiridos durante la especialización que se aplicaron en el proyecto y se proponen posibles líneas de trabajo futuro orientadas a completar y mejorar el sistema desarrollado.
 
 %----------------------------------------------------------------------------------------
+\section{Logros alcanzados}
 
-%----------------------------------------------------------------------------------------
-%	SECTION 1
-%----------------------------------------------------------------------------------------
+El desarrollo realizado permitió alcanzar el objetivo principal del trabajo, al obtenerse una plataforma embebida modular para aplicaciones de monitoreo y control industrial distribuido, compuesta por una estación central y estaciones remotas comunicadas mediante un enlace inalámbrico basado en IEEE 802.15.4. La arquitectura implementada integró funciones de adquisición y control de señales industriales, comunicación RS485 y una estructura de firmware basada en un sistema operativo de tiempo real.
 
-\section{Conclusiones generales }
-
-La idea de esta sección es resaltar cuáles son los principales aportes del trabajo realizado y cómo se podría continuar. Debe ser especialmente breve y concisa. Es buena idea usar un listado para enumerar los logros obtenidos.
-
-En esta sección no se deben incluir ni tablas ni gráficos.
-
-Algunas preguntas que pueden servir para completar este capítulo:
+Respecto de los objetivos específicos establecidos inicialmente, se alcanzaron los siguientes resultados:
 
 \begin{itemize}
-\item ¿Cuál es el grado de cumplimiento de los requerimientos?
-\item ¿Cuán fielmente se puedo seguir la planificación original (cronograma incluido)?
-\item ¿Se manifestó algunos de los riesgos identificados en la planificación? ¿Fue efectivo el plan de mitigación? ¿Se debió aplicar alguna otra acción no contemplada previamente?
-\item Si se debieron hacer modificaciones a lo planificado ¿Cuáles fueron las causas y los efectos?
-\item ¿Qué técnicas resultaron útiles para el desarrollo del proyecto y cuáles no tanto?
+	\item Se diseñó y fabricó una plataforma de hardware basada en el microcontrolador STM32H563, con una arquitectura común para las estaciones central y remotas. Se obtuvieron cinco placas, destinadas a una estación maestra y cuatro esclavas. Esta decisión simplificó el diseño respecto de la propuesta inicial, que contemplaba plataformas de procesamiento diferentes para cada tipo de estación, y favoreció la reutilización del hardware y del firmware.
+	
+	\item Se implementaron las interfaces de entradas y salidas digitales industriales, RS485 y comunicación inalámbrica. Asimismo, se desarrollaron y validaron los controladores correspondientes al SCLT3-8BT8, VNI8200XP-32, SN65HVD82 y MRF24J40.
+	
+	\item Se desarrolló una arquitectura de firmware modular sobre FreeRTOS y CMSIS-RTOS2, organizada mediante tareas independientes, interfaces de aplicación, colas de mensajes, mutex y grupos de eventos. Esta estructura permitió desacoplar la lógica de aplicación del acceso a los periféricos y facilitar la reutilización de los distintos módulos.
+	
+	\item Se implementó y validó la comunicación inalámbrica entre una estación central y una estación remota mediante una red basada en IEEE 802.15.4. Se verificó el funcionamiento del enlace a una distancia de 20 m en interiores. Además, los ensayos de integración permitieron comprobar la adquisición remota de las ocho entradas digitales, el control de las ocho salidas y la recuperación de la comunicación ante una interrupción del enlace.
+	
+	\item Se verificaron los principales controladores mediante 60 pruebas unitarias y se caracterizaron experimentalmente los tiempos de adquisición, actuación y comunicación, lo que permitió complementar la validación funcional del sistema.
 \end{itemize}
 
+No obstante, el alcance inicialmente previsto no se completó en su totalidad. La interfaz Ethernet fue incorporada al diseño de hardware, pero no se completaron la integración y validación del \textit{stack} TCP/IP ni la comunicación con un sistema de supervisión. Si bien se fabricaron cuatro placas esclavas, los ensayos de integración se limitaron a una estación maestra y una esclava, por lo que quedó pendiente la validación del funcionamiento simultáneo con múltiples estaciones remotas. Además, debido a la falta de disponibilidad de los circuitos integrados de entradas y salidas durante la fabricación de los prototipos, estas funciones debieron validarse mediante una placa de evaluación y no sobre el PCB desarrollado.
+
+La planificación temporal también presentó desvíos respecto del cronograma original. En particular, el desarrollo y la depuración del firmware demandaron un esfuerzo mayor al previsto, lo que redujo el tiempo disponible para las etapas finales de integración y validación. De esta manera, se manifestó parcialmente el riesgo asociado a la complejidad de implementación de las comunicaciones y a la disponibilidad de tiempo, identificados durante la planificación del proyecto. Como consecuencia, se priorizó la validación de las funciones fundamentales de la arquitectura frente a la incorporación de funcionalidades complementarias.
+
+En conjunto, el trabajo permitió demostrar la viabilidad de la arquitectura propuesta y obtener una base funcional de hardware y firmware sobre la cual continuar el desarrollo. Si bien algunos requerimientos y ensayos quedaron pendientes, se alcanzaron las funciones centrales necesarias para demostrar la adquisición, comunicación y actuación distribuida que constituyeron el propósito principal del proyecto.
 
 %----------------------------------------------------------------------------------------
-%	SECTION 2
-%----------------------------------------------------------------------------------------
-\section{Próximos pasos}
+\section{Conocimientos aplicados}
 
-Acá se indica cómo se podría continuar el trabajo más adelante.
+El desarrollo del proyecto permitió integrar conocimientos adquiridos durante la Carrera de Especialización en Sistemas Embebidos, mediante su aplicación en las distintas etapas de diseño, implementación y validación del sistema.
+
+En el área de hardware, se aplicaron conceptos de arquitectura de microcontroladores, diseño de circuitos impresos y diseño para manufacturabilidad. Estos conocimientos se utilizaron en la selección e integración de componentes, el diseño de las interfaces industriales, la distribución de las fuentes de alimentación y el desarrollo de las placas electrónicas.
+
+En el desarrollo del firmware, se emplearon conocimientos de programación de microcontroladores, ingeniería de software y sistemas operativos de tiempo real. Su aplicación permitió organizar el software en módulos, implementar controladores de periféricos y establecer mecanismos de concurrencia, sincronización y comunicación entre tareas mediante FreeRTOS y CMSIS-RTOS2.
+
+Los contenidos de protocolos de comunicación se aplicaron en la implementación de las interfaces SPI, RS485 y del enlace inalámbrico basado en IEEE 802.15.4. Asimismo, los conocimientos de testing de software permitieron desarrollar pruebas unitarias y establecer procedimientos de validación funcional y de integración.
+
+Finalmente, se aplicaron herramientas de gestión de proyectos para definir objetivos, organizar actividades, identificar riesgos y realizar el seguimiento del cronograma. En conjunto, el trabajo permitió vincular los conocimientos de las distintas asignaturas y aplicarlos al desarrollo de un sistema embebido que integra hardware, firmware y comunicaciones.
+
+%----------------------------------------------------------------------------------------
+\section{Trabajo futuro}
+
+Como continuación del proyecto, se propone completar las funcionalidades pendientes y ampliar la validación experimental del sistema. En primer lugar, se prevé incorporar los circuitos integrados de entradas y salidas industriales a las placas desarrolladas y verificar su funcionamiento sobre el hardware definitivo. Asimismo, se plantea extender los ensayos de integración a una red con múltiples estaciones remotas, a fin de evaluar su funcionamiento simultáneo, los tiempos de respuesta y la confiabilidad de las comunicaciones.
+
+En cuanto a las interfaces de comunicación, se propone completar la implementación de la conectividad Ethernet mediante una pila TCP/IP y su integración con sistemas de supervisión. También se contempla mejorar la robustez del protocolo propietario de comunicación inalámbrica, mediante mecanismos de detección de fallas, recuperación y gestión de las estaciones remotas. Para la interfaz RS485, se plantea incorporar un protocolo industrial abierto que facilite la interoperabilidad con otros equipos.
+
+Finalmente, se propone mejorar la seguridad y confiabilidad del firmware mediante la incorporación de mecanismos de protección y recuperación ante fallas, así como la evaluación de las funciones de seguridad disponibles en el microcontrolador.
+
+Estas mejoras permitirían avanzar desde el prototipo funcional desarrollado hacia una plataforma más robusta, interoperable y adecuada para su utilización en entornos industriales.
+
