@@ -1,0 +1,23 @@
+-------------------------------
+Running test_mrf24j40.exe...
+
+24 Tests 0 Failures 0 Ignored
+OK
+-------------------------------
+
+Running test_rs485.exe...
+
+18 Tests 0 Failures 0 Ignored
+OK
+-------------------------------
+
+Running test_sclt38bt8.exe...
+
+9 Tests 0 Failures 0 Ignored
+OK
+-------------------------------
+Running test_vni8200xp32.exe...
+
+9 Tests 0 Failures 0 Ignored
+OK
+-------------------------------

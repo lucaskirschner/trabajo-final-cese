@@ -1,0 +1,153 @@
+1. Adquisición y reporte de entradas digitales
+
+(a) Coordinador — integration_input_master.png
+
+[APP_RADIO] RX src=0x0001 data=0x00
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DIN RX src=0x0001 image=0x00
+
+[...]
+
+[APP_RADIO] RX src=0x0001 data=0x01
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DIN RX src=0x0001 image=0x01
+
+[...]
+
+[APP_RADIO] RX src=0x0001 data=0x00
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DIN RX src=0x0001 image=0x00
+
+(b) Dispositivo — integration_input_slave.png
+
+[APP_RADIO] RX src=0x0001 data=0x00
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DIN RX src=0x0001 image=0x00
+
+[...]
+
+[APP_RADIO] RX src=0x0001 data=0x01
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DIN RX src=0x0001 image=0x01
+
+[...]
+
+[APP_RADIO] RX src=0x0001 data=0x00
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DIN RX src=0x0001 image=0x00
+
+
+2. Control remoto de salidas digitales
+
+(a) Coordinador — integration_output_master.png
+
+[APP_USER] DOUT TX dst=0x0001 image=0x00
+[APP_RADIO] TX dst=0x0001 data=0x00 seq=2
+[APP_RADIO] TX success retries=0
+
+[APP_USER] DOUT TX dst=0x0001 image=0xFF
+[APP_RADIO] TX dst=0x0001 data=0xFF seq=3
+[APP_RADIO] TX success retries=0
+
+[APP_USER] DOUT TX dst=0x0001 image=0x00
+[APP_RADIO] TX dst=0x0001 data=0x00 seq=4
+[APP_RADIO] TX success retries=0
+
+[APP_USER] DOUT TX dst=0x0001 image=0xFF
+[APP_RADIO] TX dst=0x0001 data=0xFF seq=5
+[APP_RADIO] TX success retries=0
+
+(b) Dispositivo — integration_output_slave.png
+
+[APP_RADIO] RX src=0x0000 data=0x00
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DOUT request image=0x00
+
+[APP_RADIO] RX src=0x0000 data=0xFF
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DOUT request image=0xFF
+
+[APP_RADIO] RX src=0x0000 data=0x00
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DOUT request image=0x00
+
+[APP_RADIO] RX src=0x0000 data=0xFF
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DOUT request image=0xFF
+
+3. Interrupción y recuperación de la comunicación inalámbrica
+
+(a) Coordinador — integration_recovery_master.png
+
+[APP_RADIO] TX dst=0x0001 data=0x00 seq=36
+[APP_RADIO] TX failed: no ACK retries=3
+
+[APP_RADIO] TX dst=0x0001 data=0xFF seq=37
+[APP_RADIO] TX failed: no ACK retries=3
+
+[APP_RADIO] TX dst=0x0001 data=0x00 seq=38
+[APP_RADIO] TX failed: no ACK retries=3
+
+[APP_RADIO] TX dst=0x0001 data=0xFF seq=39
+[APP_RADIO] TX failed: no ACK retries=3
+
+[APP_RADIO] TX dst=0x0001 data=0x00 seq=40
+[APP_RADIO] TX success retries=0
+
+[APP_RADIO] TX dst=0x0001 data=0xFF seq=41
+[APP_RADIO] TX success retries=0
+
+(b) Dispositivo — integration_recovery_slave.png
+
+[APP_RADIO] RX frame: 61 88 23 34 12 01 00 00 00 FF
+[APP_RADIO] RX src=0x0000 data=0xFF
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DOUT request image=0xFF
+
+[...]
+
+[APP_RADIO] RX frame: 61 88 28 34 12 01 00 00 00 00
+[APP_RADIO] RX src=0x0000 data=0x00
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DOUT request image=0x00
+
+[APP_RADIO] RX frame: 61 88 29 34 12 01 00 00 00 FF
+[APP_RADIO] RX src=0x0000 data=0xFF
+[APP_RADIO] IRQ processed, INT=1
+[APP_USER] DOUT request image=0xFF
+
+4. Estado de las salidas digitales durante el reinicio
+
+(a) Coordinador — integration_init_master.png
+
+[APP_USER] Coordinator integration test
+[APP_USER] Remote address: 0x0001
+[APP_RADIO] init start
+[APP_RADIO] mrf24j40 initialized
+[APP_RADIO] role configured
+[APP_RADIO] INTCON read: 0xF6 expected: 0xF6 OK
+[APP_RADIO] PANIDL read: 0x34 expected: 0x34 OK
+[APP_RADIO] PANIDH read: 0x12 expected: 0x12 OK
+[APP_RADIO] SADRL read: 0x00 expected: 0x00 OK
+[APP_RADIO] SADRH read: 0x00 expected: 0x00 OK
+[APP_RADIO] init complete
+[APP_RADIO] role: PAN_COORDINATOR
+[APP_RADIO] short address: 0x0000
+
+(b) Dispositivo — integration_init_slave.png
+
+[APP_USER] Device integration test
+[APP_USER] Coordinator: 0x0000
+[APP_USER] DOUT initial state: 0x00 (8 outputs disabled)
+[APP_RADIO] mrf24j40 initialized
+[APP_RADIO] role configured
+[APP_RADIO] INTCON read: 0xF6 expected: 0xF6 OK
+[APP_RADIO] PANIDL read: 0x34 expected: 0x34 OK
+[APP_RADIO] PANIDH read: 0x12 expected: 0x12 OK
+[APP_RADIO] SADRL read: 0x01 expected: 0x01 OK
+[APP_RADIO] SADRH read: 0x00 expected: 0x00 OK
+[APP_RADIO] init complete
+[APP_RADIO] role: DEVICE
+[APP_RADIO] short address: 0x0001
+
+
