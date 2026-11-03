@@ -388,7 +388,9 @@ Para verificar el control remoto de las salidas digitales, se configuró la esta
 
 Los comandos se transmitieron mediante el enlace IEEE 802.15.4 y fueron procesados por el firmware de la estación remota. A continuación, se actualizaron las salidas industriales mediante la interfaz SPI del VNI8200XP-32.
 
-La figura \ref{fig:integracion_salidas_log} presenta los registros SWO correspondientes a la transmisión y recepción de los comandos, así como las solicitudes de actualización de las salidas. Además, se comprobó visualmente la conmutación de los ocho canales de la NUCLEO-PLC01 de acuerdo con los patrones enviados desde la estación central.
+La figura \ref{fig:integracion_salidas_log} presenta los registros SWO de transmisión y recepción de comandos y actualización de salidas. Además, se comprobó visualmente la conmutación de los ocho canales de la NUCLEO-PLC01 según los patrones enviados desde la estación central.
+
+Las transmisiones finalizaron sin reintentos, lo que permitió verificar el control de las salidas industriales de la estación remota desde la estación central.
 
 \begin{figure}[!htpb]
 	\centering
@@ -408,8 +410,6 @@ La figura \ref{fig:integracion_salidas_log} presenta los registros SWO correspon
 	\caption[Registros de control remoto de salidas digitales]{Registros SWO de la transmisión y recepción de comandos para el control remoto de las salidas digitales.}
 	\label{fig:integracion_salidas_log}
 \end{figure}
-
-Las transmisiones realizadas con ambas estaciones operativas finalizaron satisfactoriamente, sin reintentos en los casos registrados. Estos resultados permitieron verificar el funcionamiento de la cadena de control desde la estación central hasta las salidas industriales de la estación remota.
 
 %----------------------------------------------------------------------------------------
 \subsection{Interrupción y recuperación de la comunicación inalámbrica}

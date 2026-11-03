@@ -45,7 +45,7 @@ Finalmente, las capas inferiores comprenden los controladores de periféricos y 
 
 \begin{figure}[ht]
 	\centering
-	\includegraphics[width=0.7\textwidth]{./Figures/arquitectura_firmware.pdf}
+	\includegraphics[width=0.83\textwidth]{./Figures/arquitectura_firmware.pdf}
 	\caption{Diagrama de bloques general del firmware.}
 	\label{fig:arquitectura_firmware}
 \end{figure}
@@ -72,17 +72,19 @@ La disponibilidad de múltiples interfaces de comunicación independientes const
 
 Se seleccionó la variante STM32H563ZI en encapsulado LQFP64, cuya disponibilidad de periféricos y líneas de entrada y salida resultó suficiente para implementar todas las funcionalidades previstas en la plataforma. Asimismo, al pertenecer a la misma familia de microcontroladores empleada en la placa de evaluación NUCLEO-H563ZI, fue posible desarrollar y validar las primeras versiones del firmware sobre dicha plataforma y, posteriormente, migrarlas al hardware desarrollado con modificaciones mínimas. Esta estrategia permitió reducir los tiempos de desarrollo, aprovechar los ejemplos y bibliotecas proporcionados por STMicroelectronics y disminuir los riesgos asociados a la puesta en marcha del prototipo.
 
-Todas estas características permitieron disponer de una plataforma de procesamiento capaz de satisfacer los requerimientos funcionales del sistema, manteniendo un elevado grado de reutilización del hardware y del firmware entre las distintas variantes de la plataforma.
+Todas estas características permitieron disponer de una plataforma de procesamiento capaz de satisfacer los requerimientos funcionales del sistema, manteniendo un elevado grado de reutilización del hardware y del firmware entre las distintas variantes de la plataforma. Asimismo, la disponibilidad de recursos de procesamiento e interfaces de comunicación facilita la incorporación de nuevas funcionalidades y módulos periféricos, sin necesidad de modificar la arquitectura de procesamiento adoptada.
 
 \subsection{Sistema de alimentación}
 
-Esta etapa fue diseñada para proporcionar un dominio de alimentación aislado de 5 V a partir de una alimentación industrial nominal de 24 V, garantizando además un elevado nivel de robustez frente a las condiciones eléctricas habituales presentes en entornos industriales. La tensión de entrada de 24 V se distribuye directamente hacia las etapas de entradas y salidas industriales, mientras que la electrónica de procesamiento dispone de una alimentación aislada de 5 V, a partir de donde se obtiene posteriormente la tensión de 3,3 V utilizada por el microcontrolador y los circuitos digitales. Esta arquitectura permite desacoplar eléctricamente la lógica de control del dominio de potencia industrial, mejorando la inmunidad frente a perturbaciones y diferencias de potencial. El esquema eléctrico de esta etapa se presenta en la figura \ref{fig:pwr_schematic}.
+Esta etapa fue diseñada para proporcionar una alimentación aislada de 5 V a partir de una tensión industrial nominal de 24 V, garantizando además un elevado nivel de robustez frente a las condiciones eléctricas habituales de estos entornos. La tensión de entrada de 24 V se distribuye directamente hacia las etapas de entradas y salidas industriales, mientras que la electrónica de procesamiento dispone de una alimentación aislada de 5 V, a partir de la cual se obtiene posteriormente la tensión de 3,3 V utilizada por el microcontrolador y los circuitos digitales. Esta arquitectura permite desacoplar eléctricamente la lógica de control del dominio de potencia industrial, mejorando la inmunidad frente a perturbaciones y diferencias de potencial. El esquema eléctrico de esta etapa se presenta en la figura \ref{fig:pwr_schematic}.
 
-La conversión de energía se realiza mediante el módulo convertidor CC-CC aislado 1769405341 de Würth Elektronik, que admite una tensión de entrada nominal de 24 V y entrega una salida regulada de 5 V con una capacidad de corriente de hasta 400 mA. El convertidor incorpora aislamiento galvánico entre la entrada y la salida, proporcionando una tensión de aislamiento de 1 kV, lo que permite desacoplar eléctricamente la electrónica de control respecto del dominio de alimentación industrial y reducir la propagación de perturbaciones y diferencias de potencial provenientes del entorno industrial.
+La conversión de energía se realiza mediante el módulo CC-CC aislado 1769405341 de Würth Elektronik, que admite una tensión de entrada nominal de 24 V y entrega una salida regulada de 5 V con una corriente máxima de 400 mA. El convertidor proporciona aislamiento galvánico de 1 kV entre la entrada y la salida, lo que permite desacoplar eléctricamente la electrónica de control del dominio de alimentación industrial y reducir la propagación de perturbaciones y diferencias de potencial.
 
 Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéticas, tanto la entrada como la salida del convertidor incorporan capacitores de desacople ubicados próximos al módulo. Estos elementos reducen el ruido conducido y estabilizan la tensión de alimentación, lo que contribuye al correcto funcionamiento de la electrónica digital.
 
-\newpage
+La protección de la entrada contempla múltiples mecanismos destinados a incrementar la confiabilidad del sistema. Un fusible de 10 A constituye la primera barrera frente a condiciones de sobrecorriente o cortocircuito, limitando la energía disponible durante una falla. A continuación, un diodo TVS de 26 V protege al convertidor frente a sobretensiones transitorias generadas sobre la línea de alimentación, mientras que un diodo \textit{Schottky} conectado en serie impide la circulación de corriente en sentido inverso, proporcionando protección frente a inversiones accidentales de polaridad y evitando daños sobre los circuitos posteriores.
+
+A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, lo que hace innecesario incorporar una segunda etapa de conversión conmutada.
 
 \begin{figure}[ht]
 	\centering
@@ -90,10 +92,6 @@ Con el objetivo de aumentar la inmunidad frente a perturbaciones electromagnéti
 	\caption{Esquema eléctrico de la etapa de alimentación.}
 	\label{fig:pwr_schematic}
 \end{figure}
-
-La protección de la entrada contempla múltiples mecanismos destinados a incrementar la confiabilidad del sistema. Un fusible de 10 A constituye la primera barrera frente a condiciones de sobrecorriente o cortocircuito, limitando la energía disponible durante una falla. A continuación, un diodo TVS de 26 V protege al convertidor frente a sobretensiones transitorias generadas sobre la línea de alimentación, mientras que un diodo \textit{Schottky} conectado en serie impide la circulación de corriente en sentido inverso, proporcionando protección frente a inversiones accidentales de polaridad y evitando daños sobre los circuitos posteriores.
-
-A partir de la tensión aislada de 5 V se obtiene la alimentación de 3,3 V utilizada por el microcontrolador y los circuitos lógicos mediante un regulador lineal LD1117DT33CTR de STMicroelectronics. Dado que la demanda de corriente sobre la línea de 3,3 V resulta relativamente reducida, el empleo de un regulador lineal constituye una solución simple, de bajo costo y con un bajo nivel de ruido, lo que hace innecesario incorporar una segunda etapa de conversión conmutada.
 
 \subsection{Entradas digitales}
 
