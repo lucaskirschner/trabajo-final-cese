@@ -87,14 +87,6 @@ Para el acceso y configuración de los periféricos del microcontrolador se util
 
 La capa HAL proporciona funciones de alto nivel para el manejo de los periféricos internos del microcontrolador, incluyendo interfaces SPI, UART, Ethernet y temporizadores. Esta capa simplifica el desarrollo del firmware mediante una interfaz uniforme e independiente de los registros específicos del hardware, favoreciendo la portabilidad y el mantenimiento del software.
 
-\subsection{lwIP}
-
-Para la implementación de conectividad Ethernet y protocolos TCP/IP (\textit{Transmission Control Protocol/Internet Protocol}, protocolo de control de transmisión/protocolo de internet) se utilizó el \textit{stack} lwIP (\textit{Lightweight IP}) \cite{tcpip,lwip}.
-
-lwIP es una implementación liviana del protocolo TCP/IP \cite{tcpip} orientada a sistemas embebidos con recursos limitados. El \textit{stack} incorpora soporte para protocolos IPv4, TCP, UDP (\textit{User Datagram Protocol}, protocolo de datagrama de usuario), ICMP (\textit{Internet Control Message Protocol}, protocolo de mensajes de control de internet), DHCP (\textit{Dynamic Host Configuration Protocol}, protocolo de configuración dinámica de host) y ARP (\textit{Address Resolution Protocol}, protocolo de resolución de direcciones).
-
-En el sistema desarrollado, lwIP fue integrado junto con FreeRTOS y el periférico Ethernet del STM32H563RI. Esta integración permitió implementar comunicación Ethernet para supervisión, configuración y transmisión de datos mediante redes TCP/IP.
-
 \section{Protocolos e interfaces de comunicación}
 
 El sistema desarrollado utiliza distintas interfaces y protocolos de comunicación orientados a la adquisición de datos, control de periféricos, conectividad Ethernet y depuración del firmware. La selección de cada interfaz se realizó en función de los requerimientos de velocidad, complejidad de implementación, robustez y compatibilidad con los dispositivos externos utilizados en el trabajo.
@@ -113,11 +105,12 @@ UART permite establecer comunicaciones seriales asíncronas mediante transmisió
 
 \subsection{Ethernet y RMII}
 
-La conectividad Ethernet del sistema se implementó mediante el periférico Ethernet MAC integrado en el microcontrolador STM32H563RI \cite{STM32H563_RefManual} y el transceptor Ethernet PHY LAN8742A \cite{lan8742a}.
+El hardware de la interfaz Ethernet del sistema se diseñó mediante el periférico Ethernet MAC integrado en el microcontrolador STM32H563RI \cite{STM32H563_RefManual} y el transceptor Ethernet PHY LAN8742A \cite{lan8742a}.
 
-La comunicación entre el microcontrolador y el PHY se realizó mediante la interfaz RMII \cite{rmii}, utilizada para transmisión y recepción de datos Ethernet con bajo número de pines.
+La conexión entre el microcontrolador y el PHY se estableció mediante la interfaz RMII \cite{rmii}, que permite la transmisión y recepción de datos Ethernet con un número reducido de pines.
 
-La capa física Ethernet permite establecer comunicación 10BASE-T y 100BASE-TX sobre medio cableado de par trenzado. Esto facilita la integración con redes Ethernet industriales y servicios basados en TCP/IP.
+La capa física Ethernet está diseñada para admitir los estándares 10BASE-T y 100BASE-TX sobre cable de par trenzado, lo que proporciona una base de hardware para la futura integración con redes Ethernet industriales y servicios basados en TCP/IP.
+
 
 \subsection{IEEE 802.15.4}
 

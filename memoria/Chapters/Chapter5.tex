@@ -14,7 +14,7 @@ Respecto de los objetivos específicos establecidos inicialmente, se alcanzaron 
 	
 	\item Se implementaron las interfaces de entradas y salidas digitales industriales, RS485 y comunicación inalámbrica. Asimismo, se desarrollaron y validaron los controladores correspondientes al SCLT3-8BT8, VNI8200XP-32, SN65HVD82 y MRF24J40.
 	
-	\item Se desarrolló una arquitectura de firmware modular sobre FreeRTOS y CMSIS-RTOS2, organizada mediante tareas independientes, interfaces de aplicación, colas de mensajes, mutex y grupos de eventos. Esta estructura permitió desacoplar la lógica de aplicación del acceso a los periféricos y facilitar la reutilización de los distintos módulos.
+	\item Se desarrolló una arquitectura de firmware modular sobre FreeRTOS y CM\-SIS-RTOS2, organizada mediante tareas independientes, interfaces de aplicación, colas de mensajes, mutex y grupos de eventos. Esta estructura permitió desacoplar la lógica de aplicación del acceso a los periféricos y facilitar la reutilización de los distintos módulos.
 	
 	\item Se implementó y validó la comunicación inalámbrica entre una estación central y una estación remota mediante una red basada en IEEE 802.15.4. Se verificó el funcionamiento del enlace a una distancia de 20 m en interiores. Además, los ensayos de integración permitieron comprobar la adquisición remota de las ocho entradas digitales, el control de las ocho salidas y la recuperación de la comunicación ante una interrupción del enlace.
 	
@@ -25,7 +25,7 @@ No obstante, el alcance inicialmente previsto no se completó en su totalidad. L
 
 La planificación temporal también presentó desvíos respecto del cronograma original. En particular, el desarrollo y la depuración del firmware demandaron un esfuerzo mayor al previsto, lo que redujo el tiempo disponible para las etapas finales de integración y validación. De esta manera, se manifestó parcialmente el riesgo asociado a la complejidad de implementación de las comunicaciones y a la disponibilidad de tiempo, identificados durante la planificación del proyecto. Como consecuencia, se priorizó la validación de las funciones fundamentales de la arquitectura frente a la incorporación de funcionalidades complementarias.
 
-En conjunto, el trabajo permitió demostrar la viabilidad de la arquitectura propuesta y obtener una base funcional de hardware y firmware sobre la cual continuar el desarrollo. Si bien algunos requerimientos y ensayos quedaron pendientes, se alcanzaron las funciones centrales necesarias para demostrar la adquisición, comunicación y actuación distribuida que constituyeron el propósito principal del proyecto.
+El trabajo permitió demostrar la viabilidad de la arquitectura propuesta y obtener una base funcional de hardware y firmware sobre la cual continuar el desarrollo. Si bien algunos requerimientos y ensayos quedaron pendientes, se alcanzaron las funciones centrales necesarias para demostrar la adquisición, comunicación y actuación distribuida que constituyeron el propósito principal del proyecto.
 
 %----------------------------------------------------------------------------------------
 \section{Conocimientos aplicados}
