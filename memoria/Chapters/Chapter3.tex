@@ -133,7 +133,7 @@ La estación central incorpora una interfaz Ethernet. Para ello se seleccionó e
 
 El LAN8742A se conecta al microcontrolador mediante la interfaz RMII (\textit{Reduced Media Independent Interface}), que permite el intercambio de datos entre el periférico Ethernet MAC y el transceptor PHY. Esta arquitectura separa las funciones de la capa física de las correspondientes al microcontrolador y permite incorporar posteriormente una pila de protocolos TCP/IP para establecer comunicación con sistemas de supervisión industrial.
 
-El hardware de la interfaz Ethernet fue diseñado para admitir velocidades de operación de 10 y 100 Mb/s con negociación automática, de acuerdo con el requerimiento de conectividad Ethernet 10/100 previsto para la integración con sistemas SCADA y otras aplicaciones de supervisión industrial. Asimismo, la incorporación de una interfaz cableada dedicada en la estación central permite separar el enlace inalámbrico utilizado para la comunicación con las estaciones remotas de la red de supervisión, lo que facilita la futura integración del sistema en infraestructuras industriales existentes.
+El hardware de la interfaz Ethernet fue diseñado para admitir velocidades de 10 y 100 Mb/s con negociación automática, de acuerdo con el requerimiento de conectividad Ethernet 10/100 previsto para la integración con sistemas SCADA y otras aplicaciones de supervisión industrial. Asimismo, la interfaz cableada dedicada de la estación central permite separar el enlace inalámbrico utilizado para la comunicación con las estaciones remotas de la red de supervisión, lo que facilita la futura integración del sistema en infraestructuras industriales existentes.
 
 \subsection{Diseño del PCB}
 
@@ -165,7 +165,7 @@ Dado que la estación central y las estaciones remotas poseen responsabilidades 
 
 La figura \ref{fig:firmware_master} presenta la organización general del firmware implementado en la estación central. En esta arquitectura, la tarea \texttt{userTask} interactúa con la comunicación inalámbrica mediante las funciones \texttt{app\_rf\_send()} y \texttt{app\_rf\_\-receive()}, delegando su ejecución a la tarea \texttt{rfTask}. De forma análoga, las operaciones relacionadas con el reloj en tiempo real se realizan mediante las funciones \texttt{app\_rtc\_set()} y \texttt{app\_rtc\_get()}, administradas por la tarea \texttt{rtc\-Task}. Adicionalmente, la tarea \texttt{diagnosticsTask} centraliza el tratamiento de las condiciones de falla notificadas por los distintos módulos mediante los eventos \texttt{ra\-dioFaultHandle}, \texttt{rtcFaultHandle} y \texttt{diagnosticsFaultHandle}, lo que proporciona un mecanismo unificado para la supervisión del sistema.
 
-\begin{figure}[ht]
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=0.8\textwidth]{./Figures/arquitectura_master.pdf}
 	\caption{Organización general del firmware de la estación central.}
@@ -174,7 +174,7 @@ La figura \ref{fig:firmware_master} presenta la organización general del firmwa
 
 Por su parte, la figura \ref{fig:firmware_slave} muestra la organización correspondiente a las estaciones remotas. En este caso, además de la tarea \texttt{rfTask}, el firmware incorpora las tareas \texttt{dinTask}, \texttt{doutTask} y \texttt{rs485Task}, responsables de administrar las entradas digitales, las salidas digitales y la interfaz RS485, respectivamente. La tarea \texttt{userTask} accede a estos recursos mediante las funciones \texttt{app\_din\_read()}, \texttt{app\_dout\_set()}, \texttt{app\_rs485\_send()}, \texttt{app\_rs485\_receive()}, \texttt{app\_rf\_\-send()} y \texttt{app\_rf\_receive()}, lo que mantiene desacoplada la lógica de aplicación de la implementación específica de cada periférico. Al igual que en la estación central, las distintas tareas reportan las condiciones de error mediante los eventos \texttt{dinFaultHandle}, \texttt{doutFaultHandle}, \texttt{rs485FaultHandle}, \texttt{radio\-FaultHandle} y \texttt{diagnosticsFaultHandle}, que son procesadas por la tarea \texttt{diagnosticsTask}.
 
-\begin{figure}[ht]
+\begin{figure}[h]
 	\centering
 	\includegraphics[width=1.0\textwidth]{./Figures/arquitectura_slave.pdf}
 	\caption{Organización general del firmware de las estaciones remotas.}
